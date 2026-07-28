@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Habit Track">
+  <meta name="theme-color" content="#0b132b">
+  <title>Daily Habit Tracker</title>
+  <style>
+    :root {
+      --bg-main: #0b132b;
+      --bg-card: #1c2541;
+      --bg-input: #2a385b;
+      --accent-green: #06d6a0;
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 16px 16px 32px 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 20px 0;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #06d6a0, #3a86ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .progress-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.35);
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    /* Date Bar */
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .date-display {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .date-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .date-nav-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease;
+    }
+
+    .date-nav-btn:active {
+      transform: scale(0.92);
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Habit Items Checklist */
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .habit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .habit-card:active {
+      transform: scale(0.98);
+    }
+
+    .habit-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .habit-icon-bg {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--bg-input);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .habit-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .habit-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Circular Check Switch */
+    .check-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: transparent;
+      transition: all 0.25s ease;
+    }
+
+    .habit-card.completed .check-circle {
+      border-color: transparent;
+      color: #0d1b2a;
+    }
+
+    /* Legend Styling */
+    .legend-card {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-letter {
+      font-weight: 800;
+      color: #fff;
+      font-size: 0.7rem;
+    }
+
+    /* History Feed */
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-date {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .history-count {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .history-dots-row {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .dot-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .dot-symbol {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 800;
+      transition: all 0.2s ease;
+    }
+
+    .dot-symbol.active {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      color: #032b20;
+    }
+
+    .dot-letter {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .load-more-btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 6px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--accent-green);
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .load-more-btn:active {
+      transform: scale(0.98);
+      background: var(--bg-input);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      background: var(--bg-card);
+      border-radius: 18px;
+      border: 1px dashed var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header>
+    <div class="app-title">HABIT TRACK</div>
+    <div id="progressBadge" class="progress-badge">0 / 0 Done</div>
+  </header>
+
+  <!-- Date Selector Card -->
+  <div class="card">
+    <div class="card-label">Log Date</div>
+    <div class="date-row">
+      <button onclick="shiftDay(-1)" class="date-nav-btn">‹</button>
+      <div style="text-align: center;">
+        <div id="dateDisplay" class="date-display">--</div>
+        <div id="dateSub" class="date-sub">Today</div>
+      </div>
+      <button onclick="shiftDay(1)" class="date-nav-btn">›</button>
+    </div>
+  </div>
+
+  <!-- Interactive Daily Habits Checklist -->
+  <div id="habitList" class="habit-list"></div>
+
+  <!-- Habit Legend (Positioned right above History) -->
+  <div class="legend-card" id="legendContainer"></div>
+
+  <!-- History Feed with Symbol Indicators & Letters -->
+  <div class="history-header">
+    <div class="card-label" style="margin: 0;">History Overview</div>
+  </div>
+  <div id="historyList" class="history-list"></div>
+
+  <script>
+    // Master Habit Definitions
+    // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+    const ALL_HABITS = [
+      { id: 'protein', name: 'Protein Shake', icon: '🥤', color: '#ff9f1c', letter: 'P', days: [0,1,2,3,4,5,6] },
+      { id: 'meds', name: 'Daily Meds / Vitamins', icon: '💊', color: '#00f5d4', letter: 'M', days: [0,1,2,3,4,5,6] },
+      { id: 'gym', name: 'Daily Gym', icon: '🏋️', color: '#ff0054', letter: 'G', days: [0,1,2,3,4,5,6] },
+      { id: 'snap8_am', name: 'SNAP-8 Cream (AM)', icon: '✨', color: '#b5179e', letter: 'A', days: [0,1,2,3,4,5,6] },
+      { id: 'snap8_pm', name: 'SNAP-8 Cream (PM)', icon: '🌙', color: '#7209b7', letter: 'N', days: [0,1,2,3,4,5,6] },
+      { id: 'meditation', name: 'Daily Meditation', icon: '🧘', color: '#3a86ff', letter: 'D', days: [0,1,2,3,4,5,6] },
+      { id: 'water', name: 'Water Intake (1-2L)', icon: '💧', color: '#4cc9f0', letter: 'W', days: [0,1,2,3,4,5,6] },
+      { id: 'compost', name: 'Take Compost Out', icon: '♻️', color: '#8ac926', letter: 'C', days: [1] }, // Monday
+      { id: 'trash', name: 'Take Trash & Recycling Out', icon: '🗑️', color: '#ffca3a', letter: 'T', days: [4] } // Thursday
+    ];
+
+    let selectedDate = new Date();
+    let trackerData = {};
+    let historyLimit = 14;
+
+    function getHabitsForDate(dateObj) {
+      const dayOfWeek = dateObj.getDay();
+      return ALL_HABITS.filter(h => h.days.includes(dayOfWeek));
+    }
+
+    function formatDateKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateDisplay(dateObj) {
+      const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      return dateObj.toLocaleDateString('en-US', options);
+    }
+
+    function init() {
+      loadStorage();
+      renderLegend();
+      updateUI();
+    }
+
+    function loadStorage() {
+      const stored = localStorage.getItem('daily_habits_data_v2');
+      if (stored) {
+        try {
+          trackerData = JSON.parse(stored);
+        } catch (e) {
+          trackerData = {};
+        }
+      }
+      pruneOldData();
+    }
+
+    function pruneOldData() {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 35);
+      const cutoffKey = formatDateKey(cutoffDate);
+
+      Object.keys(trackerData).forEach(key => {
+        if (key < cutoffKey) {
+          delete trackerData[key];
+        }
+      });
+      saveStorage();
+    }
+
+    function saveStorage() {
+      localStorage.setItem('daily_habits_data_v2', JSON.stringify(trackerData));
+    }
+
+    function shiftDay(days) {
+      selectedDate.setDate(selectedDate.getDate() + days);
+      updateUI();
+    }
+
+    function renderLegend() {
+      const container = document.getElementById('legendContainer');
+      container.innerHTML = '';
+      ALL_HABITS.forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+          <div class="legend-dot" style="background: ${h.color};"></div>
+          <span class="legend-letter">[${h.letter}]</span>
+          <span>${h.name}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateUI() {
+      const dateKey = formatDateKey(selectedDate);
+      const todayKey = formatDateKey(new Date());
+
+      document.getElementById('dateDisplay').innerText = formatDateDisplay(selectedDate);
+      const subEl = document.getElementById('dateSub');
+      if (dateKey === todayKey) {
+        subEl.innerText = 'Today';
+        subEl.style.color = 'var(--accent-green)';
+      } else {
+        subEl.innerText = dateKey;
+        subEl.style.color = 'var(--text-secondary)';
+      }
+
+      if (!trackerData[dateKey]) {
+        trackerData[dateKey] = {};
+      }
+      const currentDayData = trackerData[dateKey];
+      const activeHabits = getHabitsForDate(selectedDate);
+
+      const listEl = document.getElementById('habitList');
+      listEl.innerHTML = '';
+
+      let completedCount = 0;
+
+      activeHabits.forEach(habit => {
+        const isDone = !!currentDayData[habit.id];
+        if (isDone) completedCount++;
+
+        const card = document.createElement('div');
+        card.className = `habit-card ${isDone ? 'completed' : ''}`;
+        
+        if (isDone) {
+          card.style.borderColor = habit.color;
+          card.style.boxShadow = `0 0 16px ${habit.color}60, inset 0 0 10px ${habit.color}20`;
+          card.style.background = '#1a2747';
+        } else {
+          card.style.borderColor = 'var(--border-color)';
+          card.style.boxShadow = 'none';
+          card.style.background = 'var(--bg-card)';
+        }
+
+        card.onclick = () => toggleHabit(habit.id);
+
+        card.innerHTML = `
+          <div class="habit-info">
+            <div class="habit-icon-bg" style="${isDone ? `background: ${habit.color}30; color: ${habit.color}` : ''}">
+              ${habit.icon}
+            </div>
+            <div>
+              <div class="habit-name">${habit.name}</div>
+              <div class="habit-sub">${isDone ? 'Completed' : 'Tap to mark done'}</div>
+            </div>
+          </div>
+          <div class="check-circle" style="${isDone ? `background: ${habit.color};` : ''}">
+            ${isDone ? '✓' : ''}
+          </div>
+        `;
+
+        listEl.appendChild(card);
+      });
+
+      document.getElementById('progressBadge').innerText = `${completedCount} / ${activeHabits.length} Done`;
+
+      renderHistory();
+    }
+
+    function toggleHabit(habitId) {
+      const dateKey = formatDateKey(selectedDate);
+      if (!trackerData[dateKey]) {
+        trackerData[dateKey] = {};
+      }
+      trackerData[dateKey][habitId] = !trackerData[dateKey][habitId];
+      saveStorage();
+      updateUI();
+    }
+
+    function renderHistory() {
+      const historyEl = document.getElementById('historyList');
+      historyEl.innerHTML = '';
+
+      const sortedKeys = Object.keys(trackerData).sort().reverse();
+
+      if (sortedKeys.length === 0) {
+        historyEl.innerHTML = '<div class="empty-state">No recorded habits yet. Tap a task above to log your first day!</div>';
+        return;
+      }
+
+      const visibleKeys = sortedKeys.slice(0, historyLimit);
+
+      visibleKeys.forEach(key => {
+        const dayRecord = trackerData[key] || {};
+        const [y, m, d] = key.split('-');
+        const dateObj = new Date(y, m - 1, d);
+        const displayDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        const dayHabits = getHabitsForDate(dateObj);
+
+        let doneNum = 0;
+        let columnsHtml = '';
+
+        dayHabits.forEach(h => {
+          const isDone = !!dayRecord[h.id];
+          if (isDone) doneNum++;
+
+          columnsHtml += `
+            <div class="dot-column">
+              <div class="dot-symbol ${isDone ? 'active' : ''}" 
+                   style="${isDone ? `background: ${h.color}; box-shadow: 0 0 8px ${h.color}80;` : 'background: rgba(255,255,255,0.08);'}"
+                   title="${h.name}: ${isDone ? 'Done' : 'Incomplete'}">
+                ${isDone ? '✓' : ''}
+              </div>
+              <span class="dot-letter">${h.letter}</span>
+            </div>
+          `;
+        });
+
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        row.innerHTML = `
+          <div>
+            <div class="history-date">${displayDate}</div>
+            <div class="history-count">${doneNum}/${dayHabits.length} Completed</div>
+          </div>
+          <div class="history-dots-row">
+            ${columnsHtml}
+          </div>
+        `;
+        historyEl.appendChild(row);
+      });
+
+      if (sortedKeys.length > historyLimit) {
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.className = 'load-more-btn';
+        loadMoreBtn.innerText = 'Show 21 More Days';
+        loadMoreBtn.onclick = () => {
+          historyLimit += 21;
+          renderHistory();
+        };
+        historyEl.appendChild(loadMoreBtn);
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
