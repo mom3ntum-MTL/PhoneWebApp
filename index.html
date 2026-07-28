@@ -1,20 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Apps Hub</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="App Hub" />
+  <meta name="theme-color" content="#0b132b" />
+  <title>Personal App Hub</title>
+  <style>
+    :root {
+      --bg-main: #0b132b;
+      --bg-card: #1c2541;
+      --accent-green: #06d6a0;
+      --accent-blue: #3a86ff;
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .app-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #06d6a0, #3a86ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .app-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .app-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.35);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .app-card:active {
+      transform: scale(0.97);
+    }
+
+    .app-icon-bg {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+
+    .reta .app-icon-bg {
+      background: rgba(58, 134, 255, 0.15);
+      border: 1px solid rgba(58, 134, 255, 0.3);
+    }
+
+    .habits .app-icon-bg {
+      background: rgba(6, 214, 160, 0.15);
+      border: 1px solid rgba(6, 214, 160, 0.3);
+    }
+
+    .app-details {
+      flex: 1;
+    }
+
+    .app-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .app-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .arrow-icon {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      opacity: 0.6;
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-white p-6 min-h-screen flex flex-col items-center justify-center max-w-md mx-auto">
-  <h1 class="text-2xl font-bold mb-6 text-emerald-400">App Hub</h1>
-  <div class="w-full space-y-4">
-    <a href="./tracker/" class="block text-center bg-slate-800 border border-slate-700 p-4 rounded-xl font-bold text-blue-400 hover:bg-slate-700">
-      💉 Retatrutide Tracker
+<body>
+
+  <header>
+    <div class="app-title">MY APP HUB</div>
+    <div class="app-subtitle">Select an application to launch</div>
+  </header>
+
+  <div class="app-grid">
+    <!-- Retatrutide Tracker Link -->
+    <a href="./RetaTracker/" class="app-card reta">
+      <div class="app-icon-bg">💉</div>
+      <div class="app-details">
+        <div class="app-name">Reta Tracker</div>
+        <div class="app-desc">Weekly dosage & injection log for Simon & Marc</div>
+      </div>
+      <div class="arrow-icon">›</div>
     </a>
-    <a href="./habits/" class="block text-center bg-slate-800 border border-slate-700 p-4 rounded-xl font-bold text-emerald-400 hover:bg-slate-700">
-      ⚡ Daily Habit Tracker
+
+    <!-- Daily Habit Tracker Link -->
+    <a href="./DailyTracker/" class="app-card habits">
+      <div class="app-icon-bg">⚡</div>
+      <div class="app-details">
+        <div class="app-name">Daily Habit Track</div>
+        <div class="app-desc">Checklist for vitamins, gym, cream & tasks</div>
+      </div>
+      <div class="arrow-icon">›</div>
     </a>
   </div>
+
+  <footer>
+    Standalone Local Web Applications
+  </footer>
+
 </body>
 </html>
