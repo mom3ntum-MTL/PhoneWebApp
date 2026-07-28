@@ -199,36 +199,97 @@
       color: #0d1b2a;
     }
 
-    /* Legend Styling */
-    .legend-card {
+    /* 1-5 Scale Selector (Mood & Energy) */
+    .scale-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      padding: 12px 14px;
-      background: var(--bg-card);
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 20px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    .legend-item {
+    .scale-btn {
+      flex: 1;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background: var(--bg-input);
+      border: 2px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 800;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .scale-btn:active {
+      transform: scale(0.9);
+    }
+
+    .scale-btn.active {
+      color: #0d1b2a;
+    }
+
+    /* Trends / Streak Card */
+    .trends-card {
+      background: linear-gradient(135deg, rgba(6, 214, 160, 0.14), rgba(58, 134, 255, 0.14));
+      border: 1px solid rgba(6, 214, 160, 0.35);
+      border-radius: 24px;
+      padding: 18px 16px;
+      margin-bottom: 16px;
+      display: none;
+      animation: trendsIn 0.35s ease;
+    }
+
+    .trends-card.visible {
+      display: block;
+    }
+
+    @keyframes trendsIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .trends-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--accent-green);
+      font-weight: 800;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.72rem;
-      color: var(--text-secondary);
     }
 
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+    .trends-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    .legend-letter {
+    .trend-stat {
+      flex: 1;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 10px 6px;
+    }
+
+    .trend-value {
+      font-size: 1.35rem;
       font-weight: 800;
       color: #fff;
-      font-size: 0.7rem;
+      line-height: 1.1;
+    }
+
+    .trend-label {
+      font-size: 0.66rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+      font-weight: 700;
     }
 
     /* History Feed */
@@ -333,6 +394,41 @@
       border-radius: 18px;
       border: 1px dashed var(--border-color);
     }
+
+    /* Daily Quote Card */
+    .quote-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quote-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #06d6a0, #3a86ff);
+    }
+
+    .quote-text {
+      font-size: 0.9rem;
+      font-style: italic;
+      line-height: 1.45;
+      color: #fff;
+      padding-left: 6px;
+    }
+
+    .quote-author {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      padding-left: 6px;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -342,6 +438,31 @@
     <div class="app-title">HABIT TRACK</div>
     <div id="progressBadge" class="progress-badge">0 / 0 Done</div>
   </header>
+
+  <!-- Daily Inspirational Quote -->
+  <div class="quote-card">
+    <div class="quote-text" id="quoteText">"..."</div>
+    <div class="quote-author" id="quoteAuthor">—</div>
+  </div>
+
+  <!-- Trends / Streak Motivator (shown once 4+ habits are done today) -->
+  <div id="trendsCard" class="trends-card">
+    <div class="trends-title">🔥 Your Momentum</div>
+    <div class="trends-row">
+      <div class="trend-stat">
+        <div class="trend-value" id="statCurrentStreak">0</div>
+        <div class="trend-label">Day Streak</div>
+      </div>
+      <div class="trend-stat">
+        <div class="trend-value" id="statBestStreak">0</div>
+        <div class="trend-label">Best Streak</div>
+      </div>
+      <div class="trend-stat">
+        <div class="trend-value" id="statWeekRate">0%</div>
+        <div class="trend-label">7-Day Rate</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Date Selector Card -->
   <div class="card">
@@ -359,9 +480,6 @@
   <!-- Interactive Daily Habits Checklist -->
   <div id="habitList" class="habit-list"></div>
 
-  <!-- Habit Legend (Positioned right above History) -->
-  <div class="legend-card" id="legendContainer"></div>
-
   <!-- History Feed with Symbol Indicators & Letters -->
   <div class="history-header">
     <div class="card-label" style="margin: 0;">History Overview</div>
@@ -373,15 +491,399 @@
     // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
     const ALL_HABITS = [
       { id: 'protein', name: 'Protein Shake', icon: '🥤', color: '#ff9f1c', letter: 'P', days: [0,1,2,3,4,5,6] },
-      { id: 'meds', name: 'Daily Meds / Vitamins', icon: '💊', color: '#00f5d4', letter: 'M', days: [0,1,2,3,4,5,6] },
+      { id: 'meds', name: 'Daily Meds / Vitamins', icon: '💊', color: '#00f5d4', letter: 'Rx', days: [0,1,2,3,4,5,6] },
       { id: 'gym', name: 'Daily Gym', icon: '🏋️', color: '#ff0054', letter: 'G', days: [0,1,2,3,4,5,6] },
-      { id: 'snap8_am', name: 'SNAP-8 Cream (AM)', icon: '✨', color: '#b5179e', letter: 'A', days: [0,1,2,3,4,5,6] },
-      { id: 'snap8_pm', name: 'SNAP-8 Cream (PM)', icon: '🌙', color: '#7209b7', letter: 'N', days: [0,1,2,3,4,5,6] },
-      { id: 'meditation', name: 'Daily Meditation', icon: '🧘', color: '#3a86ff', letter: 'D', days: [0,1,2,3,4,5,6] },
-      { id: 'water', name: 'Water Intake (1-2L)', icon: '💧', color: '#4cc9f0', letter: 'W', days: [0,1,2,3,4,5,6] },
+      { id: 'snap8_am', name: 'SNAP-8 Cream (AM)', icon: '✨', color: '#b5179e', letter: 'SA', days: [0,1,2,3,4,5,6] },
+      { id: 'snap8_pm', name: 'SNAP-8 Cream (PM)', icon: '🌙', color: '#7209b7', letter: 'SP', days: [0,1,2,3,4,5,6] },
+      { id: 'meditation', name: 'Daily Meditation', icon: '🧘', color: '#3a86ff', letter: 'M', days: [0,1,2,3,4,5,6] },
+      { id: 'water', name: 'Hydration', icon: '💧', color: '#4cc9f0', letter: 'H', days: [0,1,2,3,4,5,6] },
+      { id: 'moodEnergy', name: 'Mood & Energy', icon: '🙂', color: '#e07a5f', letter: 'Mo', type: 'scale', scaleMax: 5, days: [0,1,2,3,4,5,6] },
+      { id: 'noAlcohol', name: 'No Alcohol Today', icon: '🚫', color: '#e63946', letter: 'No', days: [0,1,2,3,4,5,6] },
+      { id: 'sleepScore', name: 'Sleep Score 85%+', icon: '😴', color: '#2ec4b6', letter: 'Z', days: [0,1,2,3,4,5,6] },
       { id: 'compost', name: 'Take Compost Out', icon: '♻️', color: '#8ac926', letter: 'C', days: [1] }, // Monday
       { id: 'trash', name: 'Take Trash & Recycling Out', icon: '🗑️', color: '#ffca3a', letter: 'T', days: [4] } // Thursday
     ];
+
+const QUOTES = [
+      { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+      { text: "You do not rise to the level of your goals. You fall to the level of your systems.", author: "James Clear" },
+      { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
+      { text: "Small daily improvements are the key to staggering long-term results.", author: "James Clear" },
+      { text: "The successful warrior is the average man with laser-like focus.", author: "Bruce Lee" },
+      { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
+      { text: "It's not what we do once in a while that shapes our lives, but what we do consistently.", author: "Tony Robbins" },
+      { text: "Every action you take is a vote for the type of person you wish to become.", author: "James Clear" },
+      { text: "The chains of habit are too weak to be felt until they are too strong to be broken.", author: "Samuel Johnson" },
+      { text: "You'll never change your life until you change something you do daily.", author: "Mike Murdock" },
+      { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+      { text: "Health is not valued until sickness comes.", author: "Thomas Fuller" },
+      { text: "Sleep is the golden chain that ties health and our bodies together.", author: "Thomas Dekker" },
+      { text: "The greatest wealth is health.", author: "Virgil" },
+      { text: "Rest and self-care are so important. When you take time to replenish your spirit, it allows you to serve others from the overflow.", author: "Eleanor Brownn" },
+      { text: "A year from now you may wish you had started today.", author: "Karen Lamb" },
+      { text: "Discipline is the bridge between goals and accomplishment.", author: "Jim Rohn" },
+      { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
+      { text: "Water is the driving force of all nature.", author: "Leonardo da Vinci" },
+      { text: "Almost everything will work again if you unplug it for a few minutes, including you.", author: "Anne Lamott" },
+      { text: "Self-care is not selfish. You cannot serve from an empty vessel.", author: "Eleanor Brownn" },
+      { text: "Quiet the mind, and the soul will speak.", author: "Ma Jaya Sati Bhagavati" },
+      { text: "The mind is everything. What you think you become.", author: "Buddha" },
+      { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+      { text: "Habits are the compound interest of self-improvement.", author: "James Clear" },
+      { text: "What you do every day matters more than what you do once in a while.", author: "Gretchen Rubin" },
+      { text: "The groundwork for all happiness is good health.", author: "Leigh Hunt" },
+      { text: "To keep the body in good health is a duty, otherwise we shall not be able to keep our mind strong and clear.", author: "Buddha" },
+      { text: "It is health that is real wealth and not pieces of gold and silver.", author: "Mahatma Gandhi" },
+      { text: "Take care of your body, it's the only place you have to live.", author: "Jim Rohn" },
+      { text: "An early-morning walk is a blessing for the whole day.", author: "Henry David Thoreau" },
+      { text: "He who has health has hope, and he who has hope has everything.", author: "Thomas Carlyle" },
+      { text: "A calm mind brings inner strength and self-confidence.", author: "Dalai Lama" },
+      { text: "Nothing is more revealing than movement.", author: "Martha Graham" },
+      { text: "Physical fitness is not only one of the most important keys to a healthy body, it is the basis of dynamic and creative intellectual activity.", author: "John F. Kennedy" },
+      { text: "The first wealth is health.", author: "Ralph Waldo Emerson" },
+      { text: "A healthy outside starts from the inside.", author: "Robert Urich" },
+      { text: "Happiness is the highest form of health.", author: "Dalai Lama" },
+      { text: "Exercise is a celebration of what your body can do, not a punishment for what you ate.", author: "Unknown" },
+      { text: "The greatest medicine of all is teaching people how not to need it.", author: "Hippocrates" },
+      { text: "Let food be thy medicine and medicine be thy food.", author: "Hippocrates" },
+      { text: "Sleep is the best meditation.", author: "Dalai Lama" },
+      { text: "Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit.", author: "Ralph Marston" },
+      { text: "A good laugh and a long sleep are the two best cures for anything.", author: "Irish Proverb" },
+      { text: "The time to relax is when you don't have time for it.", author: "Sydney J. Harris" },
+      { text: "Silence is a source of great strength.", author: "Lao Tzu" },
+      { text: "Yesterday is history, tomorrow is a mystery, today is a gift.", author: "Eleanor Roosevelt" },
+      { text: "Wherever you are, be all there.", author: "Jim Elliot" },
+      { text: "Peace comes from within. Do not seek it without.", author: "Buddha" },
+      { text: "The present moment is the only time over which we have dominion.", author: "Thich Nhat Hanh" },
+      { text: "You must be the change you wish to see in the world.", author: "Mahatma Gandhi" },
+      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+      { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+      { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+      { text: "Energy and persistence conquer all things.", author: "Benjamin Franklin" },
+      { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
+      { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+      { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+      { text: "Do the difficult things while they are easy and do the great things while they are small.", author: "Lao Tzu" },
+      { text: "A journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+      { text: "What we plant in the soil of contemplation, we shall reap in the harvest of action.", author: "Meister Eckhart" },
+      { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+      { text: "Perseverance is not a long race; it is many short races one after another.", author: "Walter Elliot" },
+      { text: "Character is simply habit long continued.", author: "Plutarch" },
+      { text: "First we make our habits, then our habits make us.", author: "John Dryden" },
+      { text: "Good habits are worth being fanatical about.", author: "John Irving" },
+      { text: "Habit is either the best of servants or the worst of masters.", author: "Nathaniel Emmons" },
+      { text: "Motivation gets you going, but discipline keeps you growing.", author: "John C. Maxwell" },
+      { text: "You will never always be motivated, so you must learn to be disciplined.", author: "Unknown" },
+      { text: "Winners are not people who never fail, but people who never quit.", author: "Unknown" },
+      { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+      { text: "Success is the product of daily habits, not once-in-a-lifetime transformations.", author: "James Clear" },
+      { text: "The path to success is to take massive, determined action.", author: "Tony Robbins" },
+      { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+      { text: "Do not wait to strike till the iron is hot, but make it hot by striking.", author: "William Butler Yeats" },
+      { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+      { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
+      { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+      { text: "Strength does not come from winning. Your struggles develop your strengths.", author: "Arnold Schwarzenegger" },
+      { text: "Gratitude turns what we have into enough.", author: "Aesop" },
+      { text: "Enjoy the little things, for one day you may look back and realize they were the big things.", author: "Robert Brault" },
+      { text: "Gratitude is not only the greatest of virtues but the parent of all others.", author: "Cicero" },
+      { text: "When you arise in the morning, think of what a precious privilege it is to be alive.", author: "Marcus Aurelius" },
+      { text: "The soul that gives thanks can find comfort in everything.", author: "Hannah Whitall Smith" },
+      { text: "Do every act of your life as if it were the very last act of your life.", author: "Marcus Aurelius" },
+      { text: "You have power over your mind, not outside events. Realize this, and you will find strength.", author: "Marcus Aurelius" },
+      { text: "Waste no more time arguing about what a good man should be. Be one.", author: "Marcus Aurelius" },
+      { text: "The happiness of your life depends upon the quality of your thoughts.", author: "Marcus Aurelius" },
+      { text: "Freedom is not the absence of commitments, but the ability to choose.", author: "Paulo Coelho" },
+      { text: "Nothing in life is to be feared, it is only to be understood.", author: "Marie Curie" },
+      { text: "The wound is the place where the light enters you.", author: "Rumi" },
+      { text: "Yesterday I was clever, so I wanted to change the world. Today I am wise, so I am changing myself.", author: "Rumi" },
+      { text: "Set your life on fire. Seek those who fan your flames.", author: "Rumi" },
+      { text: "Raise your words, not your voice. It is rain that grows flowers, not thunder.", author: "Rumi" },
+      { text: "You were born with wings, why prefer to crawl through life.", author: "Rumi" },
+      { text: "Look at yourself with kindness, forgive yourself for your errors.", author: "Unknown" },
+      { text: "Nurturing yourself is not selfish, it is necessary.", author: "Mandy Hale" },
+      { text: "Slow down and everything you are chasing will come around and catch you.", author: "John De Paola" },
+      { text: "You can't pour from an empty cup.", author: "Unknown" },
+      { text: "Turn your wounds into wisdom.", author: "Oprah Winfrey" },
+      { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+      { text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson" },
+      { text: "Do not go where the path may lead, go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
+      { text: "Life is 10% what happens to us and 90% how we react to it.", author: "Charles R. Swindoll" },
+      { text: "The mind is like water. When it's turbulent, it's difficult to see. When it's calm, everything becomes clear.", author: "Prasad Mahes" },
+      { text: "Meditation is not evasion; it is a serene encounter with reality.", author: "Thich Nhat Hanh" },
+      { text: "Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor.", author: "Thich Nhat Hanh" },
+      { text: "Smile, breathe, and go slowly.", author: "Thich Nhat Hanh" },
+      { text: "The present moment is filled with joy and happiness. If you are attentive, you will see it.", author: "Thich Nhat Hanh" },
+      { text: "Breathing in, I calm body and mind. Breathing out, I smile.", author: "Thich Nhat Hanh" },
+      { text: "Within you, there is a stillness and a sanctuary to which you can retreat at any time.", author: "Hermann Hesse" },
+      { text: "Nothing can bring you peace but yourself.", author: "Ralph Waldo Emerson" },
+      { text: "The quieter you become, the more you can hear.", author: "Ram Dass" },
+      { text: "Wherever you go, go with all your heart.", author: "Confucius" },
+      { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+      { text: "Our greatest glory is not in never falling, but in rising every time we fall.", author: "Confucius" },
+      { text: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius" },
+      { text: "Choose a job you love, and you will never have to work a day in your life.", author: "Confucius" },
+      { text: "By three methods we may learn wisdom: reflection, imitation, and experience.", author: "Confucius" },
+      { text: "Real knowledge is to know the extent of one's ignorance.", author: "Confucius" },
+      { text: "Everything has beauty, but not everyone can see.", author: "Confucius" },
+      { text: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar" },
+      { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+      { text: "People often say that motivation doesn't last. Well, neither does bathing — that's why we recommend it daily.", author: "Zig Ziglar" },
+      { text: "If you don't have goals of your own, you're doomed to work to achieve someone else's.", author: "Brian Tracy" },
+      { text: "Setting goals is the first step in turning the invisible into the visible.", author: "Tony Robbins" },
+      { text: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
+      { text: "Do not let what you cannot do interfere with what you can do.", author: "John Wooden" },
+      { text: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
+      { text: "We must all suffer one of two things: the pain of discipline or the pain of regret.", author: "Jim Rohn" },
+      { text: "Formal education will make you a living; self-education will make you a fortune.", author: "Jim Rohn" },
+      { text: "Time is more valuable than money. You can get more money, but you cannot get more time.", author: "Jim Rohn" },
+      { text: "Don't wish it were easier, wish you were better.", author: "Jim Rohn" },
+      { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
+      { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+      { text: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.", author: "Stephen King" },
+      { text: "Discipline equals freedom.", author: "Jocko Willink" },
+      { text: "The struggle you're in today is developing the strength you need for tomorrow.", author: "Robert Tew" },
+      { text: "Suffer the pain of discipline or suffer the pain of regret.", author: "Jim Rohn" },
+      { text: "Little by little, one travels far.", author: "J.R.R. Tolkien" },
+      { text: "Not all those who wander are lost.", author: "J.R.R. Tolkien" },
+      { text: "Even the smallest person can change the course of the future.", author: "J.R.R. Tolkien" },
+      { text: "It's the job that's never started that takes longest to finish.", author: "J.R.R. Tolkien" },
+      { text: "All we have to decide is what to do with the time that is given us.", author: "J.R.R. Tolkien" },
+      { text: "Turn your face to the sun and the shadows fall behind you.", author: "Maori Proverb" },
+      { text: "Fall down seven times, get up eight.", author: "Japanese Proverb" },
+      { text: "A smooth sea never made a skilled sailor.", author: "African Proverb" },
+      { text: "However long the night, the dawn will break.", author: "African Proverb" },
+      { text: "If you want to go fast, go alone. If you want to go far, go together.", author: "African Proverb" },
+      { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+      { text: "Give a man a fish and you feed him for a day; teach a man to fish and you feed him for a lifetime.", author: "Chinese Proverb" },
+      { text: "A single conversation across the table with a wise person is worth a month's study of books.", author: "Chinese Proverb" },
+      { text: "He who asks a question is a fool for five minutes; he who does not ask remains a fool forever.", author: "Chinese Proverb" },
+      { text: "Water which is too pure has no fish.", author: "Chinese Proverb" },
+      { text: "Vision without action is a daydream. Action without vision is a nightmare.", author: "Japanese Proverb" },
+      { text: "One kind word can warm three winter months.", author: "Japanese Proverb" },
+      { text: "Better than a thousand hollow words, is one word that brings peace.", author: "Buddha" },
+      { text: "The trouble is, you think you have time.", author: "Buddha" },
+      { text: "Three things cannot be long hidden: the sun, the moon, and the truth.", author: "Buddha" },
+      { text: "Peace comes from within.", author: "Buddha" },
+      { text: "What we think, we become.", author: "Buddha" },
+      { text: "Health is the greatest gift, contentment the greatest wealth.", author: "Buddha" },
+      { text: "Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment.", author: "Buddha" },
+      { text: "An idea that is developed and put into action is more important than an idea that exists only as an idea.", author: "Buddha" },
+      { text: "It is better to conquer yourself than to win a thousand battles.", author: "Buddha" },
+      { text: "However many holy words you read, however many you speak, what good will they do if you do not act on upon them?", author: "Buddha" },
+      { text: "You only lose what you cling to.", author: "Buddha" },
+      { text: "Just as a candle cannot burn without fire, men cannot live without a spiritual life.", author: "Buddha" },
+      { text: "If you light a lamp for somebody, it will also brighten your path.", author: "Buddha" },
+      { text: "The mind is everything. What you think, you become.", author: "Buddha" },
+      { text: "Hatred does not cease by hatred, but only by love; this is the eternal rule.", author: "Buddha" },
+      { text: "The tongue like a sharp knife, kills without drawing blood.", author: "Buddha" },
+      { text: "Better than a thousand useless words is one word that brings peace.", author: "Buddha" },
+      { text: "A jug fills drop by drop.", author: "Buddha" },
+      { text: "Believe nothing, no matter where you read it, unless it agrees with your own reason and common sense.", author: "Buddha" },
+      { text: "You cannot travel the path until you have become the path itself.", author: "Buddha" },
+      { text: "One glass of water at a time, you build the habit of taking care of yourself.", author: "Unknown" },
+      { text: "Hydration is a quiet act of self-respect.", author: "Unknown" },
+      { text: "The gym doesn't care how you feel today. Show up anyway.", author: "Unknown" },
+      { text: "A single rep, a single breath, a single glass of water — that's how change compounds.", author: "Unknown" },
+      { text: "You don't need a perfect day. You need a done day.", author: "Unknown" },
+      { text: "Every checkbox is a small promise kept to yourself.", author: "Unknown" },
+      { text: "Rest is not the opposite of progress. It is part of it.", author: "Unknown" },
+      { text: "Sober mornings are the reward for sober nights.", author: "Unknown" },
+      { text: "Skip the drink tonight, and thank yourself in the morning.", author: "Unknown" },
+      { text: "Sleep is not a luxury. It is maintenance.", author: "Unknown" },
+      { text: "A good night's sleep is the cheapest performance enhancer there is.", author: "Unknown" },
+      { text: "The body keeps score. Feed it, move it, rest it.", author: "Unknown" },
+      { text: "Discipline is a form of self-love, not self-punishment.", author: "Unknown" },
+      { text: "You're not chasing perfection. You're chasing consistency.", author: "Unknown" },
+      { text: "Streaks are built one unremarkable day at a time.", author: "Unknown" },
+      { text: "The days you don't feel like it are the days that count the most.", author: "Unknown" },
+      { text: "Small habits, stacked daily, become an identity.", author: "Unknown" },
+      { text: "Show up for yourself the way you'd show up for someone you love.", author: "Unknown" },
+      { text: "Progress hides inside boring, repeated days.", author: "Unknown" },
+      { text: "The best version of you is built in private, one habit at a time.", author: "Unknown" },
+      { text: "A clear mind starts with a few quiet minutes of stillness.", author: "Unknown" },
+      { text: "Meditation isn't about stopping thoughts, it's about not chasing them.", author: "Unknown" },
+      { text: "Breathe in patience, breathe out pressure.", author: "Unknown" },
+      { text: "You can't pour from an empty glass — fill it with water and rest first.", author: "Unknown" },
+      { text: "Every habit you keep is a vote for the person you're becoming.", author: "Unknown" },
+      { text: "The compost still needs taking out, even on the hard days. So do you.", author: "Unknown" },
+      { text: "Momentum is just consistency wearing a confident coat.", author: "Unknown" },
+      { text: "Today's effort is tomorrow's ease.", author: "Unknown" },
+      { text: "Choose the version of tonight that your tomorrow self will thank you for.", author: "Unknown" },
+      { text: "No alcohol tonight is a gift you give your future self.", author: "Unknown" },
+      { text: "A clear head tomorrow starts with a clear choice tonight.", author: "Unknown" },
+      { text: "Vitamins on the counter don't help until they're in you.", author: "Unknown" },
+      { text: "The best supplement is still consistency.", author: "Unknown" },
+      { text: "You are allowed to be both a work in progress and worthy of celebration.", author: "Unknown" },
+      { text: "One more glass of water won't fix everything, but it won't hurt either.", author: "Unknown" },
+      { text: "Strength is built quietly, rep by rep, day by day.", author: "Unknown" },
+      { text: "The days you check every box are proof you can.", author: "Unknown" },
+      { text: "Discipline whispers before motivation ever shows up.", author: "Unknown" },
+      { text: "Your future self is watching what you do today.", author: "Unknown" },
+      { text: "A streak is just a string of decisions to not quit.", author: "Unknown" },
+      { text: "Not every day will be a perfect score. Show up anyway.", author: "Unknown" },
+      { text: "Recovery days are training days for the mind.", author: "Unknown" },
+      { text: "The habit tracker doesn't judge you. It just remembers.", author: "Unknown" },
+      { text: "Do the unremarkable thing today. That's the whole secret.", author: "Unknown" },
+      { text: "Take the compost out. Take a breath. Take care of yourself.", author: "Unknown" },
+      { text: "Sleep well, drink water, move your body — the basics are never basic.", author: "Unknown" },
+      { text: "You don't need more motivation. You need a smaller next step.", author: "Unknown" },
+      { text: "The five minutes of meditation you skip are the five minutes you needed most.", author: "Unknown" },
+      { text: "A body that's hydrated and rested can handle almost anything.", author: "Unknown" },
+      { text: "Every checkmark is evidence you're becoming someone new.", author: "Unknown" },
+      { text: "Consistency beats intensity, almost every single time.", author: "Unknown" },
+      { text: "The version of you a year from now is built today.", author: "Unknown" },
+      { text: "Skipping the drink tonight is training your willpower for tomorrow.", author: "Unknown" },
+      { text: "You don't have to feel ready. You just have to begin.", author: "Unknown" },
+      { text: "A short walk clears more than your legs.", author: "Unknown" },
+      { text: "Recovery isn't quitting. It's part of the plan.", author: "Unknown" },
+      { text: "The smallest habit, kept daily, outlasts the biggest goal, kept occasionally.", author: "Unknown" },
+      { text: "Water first, coffee second, patience always.", author: "Unknown" },
+      { text: "The gym is where you practice showing up for hard things.", author: "Unknown" },
+      { text: "Some days the win is just getting the vitamins in.", author: "Unknown" },
+      { text: "A calm evening is the foundation of a clear morning.", author: "Unknown" },
+      { text: "Every habit checked is a quiet act of discipline.", author: "Unknown" },
+      { text: "You're not behind. You're exactly where consistency puts you.", author: "Unknown" },
+      { text: "The body remembers what the mind forgets to appreciate.", author: "Unknown" },
+      { text: "Today's small choices are tomorrow's big results.", author: "Unknown" },
+      { text: "Sleep score matters because rest is not optional, it's foundational.", author: "Unknown" },
+      { text: "You get to choose, again today, who you want to become.", author: "Unknown" },
+      { text: "A single day without alcohol is a single day of clarity earned.", author: "Unknown" },
+      { text: "Meditation is the pause that makes the rest of the day possible.", author: "Unknown" },
+      { text: "Nothing dramatic. Just showing up, again, like yesterday.", author: "Unknown" },
+      { text: "The compost, the gym, the water — none of it is glamorous. All of it matters.", author: "Unknown" },
+      { text: "Your habits are quiet, but they are loud in the long run.", author: "Unknown" },
+      { text: "Consistency is a conversation you have with yourself, daily.", author: "Unknown" },
+      { text: "The best day to start again is always today.", author: "Unknown" },
+      { text: "A streak broken isn't a failure. It's a pause before the next one.", author: "Unknown" },
+      { text: "Every glass of water is a small act of kindness to your future self.", author: "Unknown" },
+      { text: "What you repeat, you become.", author: "Unknown" },
+      { text: "Discipline today buys freedom tomorrow.", author: "Unknown" },
+      { text: "The habit is the goal. Everything else is a bonus.", author: "Unknown" },
+      { text: "Slow, steady, and daily beats fast, dramatic, and rare.", author: "Unknown" },
+      { text: "You are the sum of the days you almost skipped but didn't.", author: "Unknown" },
+      { text: "A clear morning starts with a clear decision the night before.", author: "Unknown" },
+      { text: "The best time to build the habit was yesterday. The next best time is today.", author: "Unknown" },
+      { text: "Every day you show up, you make tomorrow a little easier.", author: "Unknown" },
+      { text: "Rest, hydrate, move, repeat — the quiet formula that actually works.", author: "Unknown" },
+      { text: "You don't need to feel motivated. You need to feel committed.", author: "Unknown" },
+      { text: "The tracker isn't the goal. The person you're becoming is.", author: "Unknown" },
+      { text: "Take it one habit, one hour, one day at a time.", author: "Unknown" },
+      { text: "Being kind to your body today is a gift to your body tomorrow.", author: "Unknown" },
+      { text: "A quiet night without a drink is a loud statement of self-respect.", author: "Unknown" },
+      { text: "The days that feel unremarkable are often the ones that matter most.", author: "Unknown" },
+      { text: "The best habit tracker is the one you actually open.", author: "Unknown" },
+      { text: "You don't rise to your goals, you fall to your systems — so build good ones.", author: "Unknown" },
+      { text: "A tidy kitchen counter, a full water bottle, a made bed. Small order breeds calm.", author: "Unknown" },
+      { text: "Taking the recycling out is a five-minute act of respect for the space you live in.", author: "Unknown" },
+      { text: "Nobody regrets the workout they finished. Plenty regret the one they skipped.", author: "Unknown" },
+      { text: "You are one glass of water away from a slightly better afternoon.", author: "Unknown" },
+      { text: "The best morning routine is the one that survives a bad night's sleep.", author: "Unknown" },
+      { text: "Not every day needs to be a personal record. Some days just need to be done.", author: "Unknown" },
+      { text: "The habit you keep on your worst day is the one that actually counts.", author: "Unknown" },
+      { text: "Discipline is remembering what you want, even when you don't want it.", author: "Unknown" },
+      { text: "The quiet decision to skip the drink tonight is louder than it feels.", author: "Unknown" },
+      { text: "A short meditation beats a long scroll, every single time.", author: "Unknown" },
+      { text: "Your future self will not remember the excuse. They'll remember the result.", author: "Unknown" },
+      { text: "Habits are just decisions you no longer have to make.", author: "Unknown" },
+      { text: "The gym doesn't build your body. Showing up, again and again, does.", author: "Unknown" },
+      { text: "Eight checkmarks today is worth more than eight promises tomorrow.", author: "Unknown" },
+      { text: "Sleep is training too — just the kind you do lying down.", author: "Unknown" },
+      { text: "You don't need a new plan. You need to run the plan you already have.", author: "Unknown" },
+      { text: "The compost bin doesn't care about your excuses, and neither should you.", author: "Unknown" },
+      { text: "A single sober evening rebuilds more than it seems to.", author: "Unknown" },
+      { text: "The version of you that skips today's habits is not the version you're building toward.", author: "Unknown" },
+      { text: "Consistency is unglamorous. That's exactly why it works.", author: "Unknown" },
+      { text: "Water, movement, rest, stillness — the four pillars nobody brags about.", author: "Unknown" },
+      { text: "The days you don't want to check the box are the days the box matters most.", author: "Unknown" },
+      { text: "Nothing about discipline is dramatic. That's the whole point.", author: "Unknown" },
+      { text: "You're not too tired for five minutes of stillness. You're avoiding it.", author: "Unknown" },
+      { text: "The best time to take your vitamins was this morning. The second best time is now.", author: "Unknown" },
+      { text: "A streak is fragile until it isn't. Protect the early days.", author: "Unknown" },
+      { text: "Your habits are a letter you're writing to your future self.", author: "Unknown" },
+      { text: "The days that feel like nothing happened are usually the days everything did.", author: "Unknown" },
+      { text: "Give your body water before you give it judgment.", author: "Unknown" },
+      { text: "The gym bag by the door is half the battle already won.", author: "Unknown" },
+      { text: "One skipped drink, one better tomorrow.", author: "Unknown" },
+      { text: "A completed checklist is a love letter to your own discipline.", author: "Unknown" },
+      { text: "You don't need motivation at 6am. You need a habit that doesn't ask permission.", author: "Unknown" },
+      { text: "The trash goes out on Thursday whether you feel like it or not — treat your habits the same.", author: "Unknown" },
+      { text: "Small, boring, repeated actions are how every big change actually happens.", author: "Unknown" },
+      { text: "Sleep well tonight so tomorrow doesn't have to apologize for today.", author: "Unknown" },
+      { text: "A clear mind is downstream from a rested body.", author: "Unknown" },
+      { text: "You've already survived every hard day so far. Trust the streak.", author: "Unknown" },
+      { text: "The days you show up tired are the days that build the most character.", author: "Unknown" },
+      { text: "There is no finish line for good habits, only the next day to show up.", author: "Unknown" },
+      { text: "A glass of water is the cheapest act of self-care available to you right now.", author: "Unknown" },
+      { text: "Discipline isn't punishment. It's the shape love takes when it's aimed at yourself.", author: "Unknown" },
+      { text: "The habit tracker remembers what your memory conveniently forgets.", author: "Unknown" },
+      { text: "One more rep, one more glass, one more quiet minute — that's the whole practice.", author: "Unknown" },
+      { text: "Every evening without a drink is a morning you get to keep.", author: "Unknown" },
+      { text: "You don't have to want to. You just have to do it anyway.", author: "Unknown" },
+      { text: "The best streaks are built by people who had bad days and showed up regardless.", author: "Unknown" },
+      { text: "Meditation is just permission to stop for five minutes.", author: "Unknown" },
+      { text: "Your habits don't care about your mood. That's why they work.", author: "Unknown" },
+      { text: "Taking the compost out is a tiny act of order in a chaotic week.", author: "Unknown" },
+      { text: "The body forgives a lot, but it never forgets consistency.", author: "Unknown" },
+      { text: "You can't out-motivate a bad system. Fix the system instead.", author: "Unknown" },
+      { text: "Some days the win is simply not giving up on the streak.", author: "Unknown" },
+      { text: "A rested body makes better decisions than a tired one.", author: "Unknown" },
+      { text: "The smallest habit, kept honestly, beats the biggest plan, kept occasionally.", author: "Unknown" },
+      { text: "Every day you choose water over nothing, you choose yourself.", author: "Unknown" },
+      { text: "The quiet 90% of good health happens in unremarkable daily choices.", author: "Unknown" },
+      { text: "You are not behind. You are exactly as far along as your habits have taken you.", author: "Unknown" },
+      { text: "A single day of rest is not a setback. It's a requirement.", author: "Unknown" },
+      { text: "The best gift you can give tomorrow-you is a finished checklist today.", author: "Unknown" },
+      { text: "Nobody sees the vitamins you took or the water you drank. Do it anyway.", author: "Unknown" },
+      { text: "Discipline is a muscle. Today's rep makes tomorrow's easier.", author: "Unknown" },
+      { text: "A clear evening routine is the quiet architecture of a clear morning.", author: "Unknown" },
+      { text: "The habit of showing up outlasts the mood of not wanting to.", author: "Unknown" },
+      { text: "You don't need to feel like a different person. You need to act like one, today.", author: "Unknown" },
+      { text: "One sober night doesn't fix everything, but it never makes anything worse.", author: "Unknown" },
+      { text: "The days you check every box are proof of who you're becoming, not who you were.", author: "Unknown" },
+      { text: "A short walk after dinner does more than it gets credit for.", author: "Unknown" },
+      { text: "Nothing about a habit tracker is magic. The magic is in doing it anyway.", author: "Unknown" },
+      { text: "The best relationship with alcohol is the one where you get to choose, sober.", author: "Unknown" },
+      { text: "Your sleep score is a report card nobody grades but you.", author: "Unknown" },
+      { text: "The compost, the trash, the water bottle — all small proof that you're paying attention.", author: "Unknown" },
+      { text: "Discipline doesn't need applause. It just needs repetition.", author: "Unknown" },
+      { text: "You are the only person who will ever see every single checkmark. Do it for them.", author: "Unknown" },
+      { text: "A day with no alcohol is a day with a little more of you in it.", author: "Unknown" },
+      { text: "The habit you almost skip is usually the one you need most.", author: "Unknown" },
+      { text: "Rest is productive. Say it until you believe it.", author: "Unknown" },
+      { text: "Every checked box is a small argument against your own doubt.", author: "Unknown" },
+      { text: "You don't need a better mood to take your meds. You need to take them anyway.", author: "Unknown" },
+      { text: "The days that feel most ordinary are quietly building something extraordinary.", author: "Unknown" },
+      { text: "A full water bottle on the desk is a promise you're keeping to yourself.", author: "Unknown" },
+      { text: "Consistency doesn't ask for your best. It asks for your presence.", author: "Unknown" },
+      { text: "The gym doesn't require inspiration. It just requires arrival.", author: "Unknown" },
+      { text: "One good night's sleep can rewrite the whole next day.", author: "Unknown" },
+      { text: "You're not starting over. You're continuing, even if the streak reset.", author: "Unknown" },
+      { text: "The best version of discipline looks a lot like kindness to yourself.", author: "Unknown" },
+      { text: "A five-minute meditation is still five minutes more still than none.", author: "Unknown" },
+      { text: "The days you don't feel like logging anything are the days worth logging most.", author: "Unknown" },
+      { text: "You get one body. Water it, rest it, move it, respect it.", author: "Unknown" },
+      { text: "Nothing about consistency is exciting until you look back a year later.", author: "Unknown" },
+      { text: "The choice to skip a drink tonight is a small, quiet form of self-trust.", author: "Unknown" },
+      { text: "A tracked habit is a promise made visible.", author: "Unknown" },
+      { text: "The best morning starts with a decision made the night before.", author: "Unknown" },
+      { text: "You are always one small choice away from a better version of today.", author: "Unknown" },
+      { text: "Habits are the votes you cast for the identity you're building.", author: "Unknown" },
+      { text: "The last habit of the day is often the one that matters most for the next.", author: "Unknown" },
+    ];
+
+    function dayOfYear(dateObj) {
+      const start = new Date(dateObj.getFullYear(), 0, 0);
+      const diff = dateObj - start;
+      return Math.floor(diff / 86400000);
+    }
+
+    function renderQuote(dateObj) {
+      const idx = dayOfYear(dateObj) % QUOTES.length;
+      const q = QUOTES[idx];
+      document.getElementById('quoteText').innerText = `"${q.text}"`;
+      document.getElementById('quoteAuthor').innerText = `— ${q.author}`;
+    }
 
     let selectedDate = new Date();
     let trackerData = {};
@@ -406,7 +908,6 @@
 
     function init() {
       loadStorage();
-      renderLegend();
       updateUI();
     }
 
@@ -444,24 +945,74 @@
       updateUI();
     }
 
-    function renderLegend() {
-      const container = document.getElementById('legendContainer');
-      container.innerHTML = '';
-      ALL_HABITS.forEach(h => {
-        const item = document.createElement('div');
-        item.className = 'legend-item';
-        item.innerHTML = `
-          <div class="legend-dot" style="background: ${h.color};"></div>
-          <span class="legend-letter">[${h.letter}]</span>
-          <span>${h.name}</span>
-        `;
-        container.appendChild(item);
-      });
+    // --- Trends / Streak helpers ---
+    function isDayComplete(dateObj) {
+      const dayHabits = getHabitsForDate(dateObj);
+      if (dayHabits.length === 0) return false;
+      const rec = trackerData[formatDateKey(dateObj)] || {};
+      const doneCount = dayHabits.filter(h => !!rec[h.id]).length;
+      return doneCount > 4;
+    }
+
+    function calcCurrentStreak() {
+      let cursor = new Date();
+      if (!isDayComplete(cursor)) {
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      let streak = 0;
+      while (isDayComplete(cursor)) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    function calcBestStreak() {
+      let best = 0, run = 0;
+      let d = new Date();
+      d.setDate(d.getDate() - 34);
+      for (let i = 0; i < 35; i++) {
+        if (isDayComplete(d)) {
+          run++;
+          best = Math.max(best, run);
+        } else {
+          run = 0;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+      return best;
+    }
+
+    function calcWeekRate() {
+      let done = 0, possible = 0;
+      let d = new Date();
+      for (let i = 0; i < 7; i++) {
+        const dayHabits = getHabitsForDate(d);
+        const rec = trackerData[formatDateKey(d)] || {};
+        possible += dayHabits.length;
+        done += dayHabits.filter(h => !!rec[h.id]).length;
+        d.setDate(d.getDate() - 1);
+      }
+      return possible ? Math.round((done / possible) * 100) : 0;
+    }
+
+    function renderTrends(show) {
+      const card = document.getElementById('trendsCard');
+      if (!show) {
+        card.classList.remove('visible');
+        return;
+      }
+      document.getElementById('statCurrentStreak').innerText = calcCurrentStreak();
+      document.getElementById('statBestStreak').innerText = calcBestStreak();
+      document.getElementById('statWeekRate').innerText = calcWeekRate() + '%';
+      card.classList.add('visible');
     }
 
     function updateUI() {
       const dateKey = formatDateKey(selectedDate);
       const todayKey = formatDateKey(new Date());
+
+      renderQuote(selectedDate);
 
       document.getElementById('dateDisplay').innerText = formatDateDisplay(selectedDate);
       const subEl = document.getElementById('dateSub');
@@ -485,12 +1036,14 @@
       let completedCount = 0;
 
       activeHabits.forEach(habit => {
-        const isDone = !!currentDayData[habit.id];
+        const isScale = habit.type === 'scale';
+        const rawValue = currentDayData[habit.id];
+        const isDone = !!rawValue;
         if (isDone) completedCount++;
 
         const card = document.createElement('div');
         card.className = `habit-card ${isDone ? 'completed' : ''}`;
-        
+
         if (isDone) {
           card.style.borderColor = habit.color;
           card.style.boxShadow = `0 0 16px ${habit.color}60, inset 0 0 10px ${habit.color}20`;
@@ -501,28 +1054,59 @@
           card.style.background = 'var(--bg-card)';
         }
 
-        card.onclick = () => toggleHabit(habit.id);
-
-        card.innerHTML = `
-          <div class="habit-info">
-            <div class="habit-icon-bg" style="${isDone ? `background: ${habit.color}30; color: ${habit.color}` : ''}">
-              ${habit.icon}
+        if (isScale) {
+          const max = habit.scaleMax || 5;
+          let btnsHtml = '';
+          for (let v = 1; v <= max; v++) {
+            const active = rawValue === v;
+            btnsHtml += `
+              <div class="scale-btn ${active ? 'active' : ''}" style="${active ? `background: ${habit.color}; border-color: ${habit.color};` : ''}" data-value="${v}">
+                ${v}
+              </div>
+            `;
+          }
+          card.innerHTML = `
+            <div class="habit-info">
+              <div class="habit-icon-bg" style="${isDone ? `background: ${habit.color}30; color: ${habit.color}` : ''}">
+                ${habit.icon}
+              </div>
+              <div>
+                <div class="habit-name">${habit.name}</div>
+                <div class="habit-sub">${isDone ? `Rated ${rawValue}/${max}` : 'Tap a number to rate'}</div>
+              </div>
             </div>
-            <div>
-              <div class="habit-name">${habit.name}</div>
-              <div class="habit-sub">${isDone ? 'Completed' : 'Tap to mark done'}</div>
+            <div class="scale-row">${btnsHtml}</div>
+          `;
+          card.querySelectorAll('.scale-btn').forEach(btn => {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              setScaleValue(habit.id, parseInt(btn.dataset.value, 10));
+            };
+          });
+        } else {
+          card.onclick = () => toggleHabit(habit.id);
+          card.innerHTML = `
+            <div class="habit-info">
+              <div class="habit-icon-bg" style="${isDone ? `background: ${habit.color}30; color: ${habit.color}` : ''}">
+                ${habit.icon}
+              </div>
+              <div>
+                <div class="habit-name">${habit.name}</div>
+                <div class="habit-sub">${isDone ? 'Completed' : 'Tap to mark done'}</div>
+              </div>
             </div>
-          </div>
-          <div class="check-circle" style="${isDone ? `background: ${habit.color};` : ''}">
-            ${isDone ? '✓' : ''}
-          </div>
-        `;
+            <div class="check-circle" style="${isDone ? `background: ${habit.color};` : ''}">
+              ${isDone ? '✓' : ''}
+            </div>
+          `;
+        }
 
         listEl.appendChild(card);
       });
 
       document.getElementById('progressBadge').innerText = `${completedCount} / ${activeHabits.length} Done`;
 
+      renderTrends(completedCount > 4);
       renderHistory();
     }
 
@@ -532,6 +1116,17 @@
         trackerData[dateKey] = {};
       }
       trackerData[dateKey][habitId] = !trackerData[dateKey][habitId];
+      saveStorage();
+      updateUI();
+    }
+
+    function setScaleValue(habitId, value) {
+      const dateKey = formatDateKey(selectedDate);
+      if (!trackerData[dateKey]) {
+        trackerData[dateKey] = {};
+      }
+      // tapping the already-selected value clears the rating
+      trackerData[dateKey][habitId] = trackerData[dateKey][habitId] === value ? 0 : value;
       saveStorage();
       updateUI();
     }
@@ -561,15 +1156,22 @@
         let columnsHtml = '';
 
         dayHabits.forEach(h => {
-          const isDone = !!dayRecord[h.id];
+          const rawValue = dayRecord[h.id];
+          const isDone = !!rawValue;
           if (isDone) doneNum++;
+
+          const isScale = h.type === 'scale';
+          const symbolContent = isDone ? (isScale ? rawValue : '✓') : '';
+          const titleText = isDone
+            ? (isScale ? `${h.name}: ${rawValue}/${h.scaleMax || 5}` : `${h.name}: Done`)
+            : `${h.name}: Incomplete`;
 
           columnsHtml += `
             <div class="dot-column">
               <div class="dot-symbol ${isDone ? 'active' : ''}" 
                    style="${isDone ? `background: ${h.color}; box-shadow: 0 0 8px ${h.color}80;` : 'background: rgba(255,255,255,0.08);'}"
-                   title="${h.name}: ${isDone ? 'Done' : 'Incomplete'}">
-                ${isDone ? '✓' : ''}
+                   title="${titleText}">
+                ${symbolContent}
               </div>
               <span class="dot-letter">${h.letter}</span>
             </div>
