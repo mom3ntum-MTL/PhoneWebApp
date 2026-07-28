@@ -6,9 +6,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Habit Track">
+  <meta name="apple-mobile-web-app-title" content="My Habit Tracker">
   <meta name="theme-color" content="#f8fafc">
-  <title>Daily Habit Tracker</title>
+  <title>My Habit Tracker</title>
   
   <style>
     :root {
@@ -267,6 +267,70 @@
 
     .scale-btn.active {
       color: #ffffff;
+    }
+
+    /* 8-Cup Hydration Tracker */
+    .cups-row {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .cup-btn {
+      flex: 1;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 800;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cup-btn:active {
+      transform: scale(0.9);
+    }
+
+    .cup-btn.active {
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    /* Dual Check Buttons (SNAP-8 AM / PM) */
+    .dual-check-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dual-check-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dual-check-btn:active {
+      transform: scale(0.92);
+    }
+
+    .dual-check-btn.active {
+      color: #ffffff;
+      border-color: transparent;
     }
 
     .quote-card {
@@ -657,7 +721,7 @@
   <!-- Header -->
   <header>
     <div class="header-left">
-      <div class="app-title">HABIT TRACK</div>
+      <div class="app-title">MY HABIT TRACKER</div>
       <button class="btn-settings" onclick="openTrackerModal()" title="Manage Local Trackers">⚙️</button>
     </div>
     <div id="progressBadge" class="progress-badge">0 / 0 Done</div>
@@ -739,10 +803,9 @@
       { id: 'protein', name: 'Protein Shake', icon: '🥤', color: '#d97706', letter: 'P', days: [0,1,2,3,4,5,6] },
       { id: 'meds', name: 'Daily Meds / Vitamins', icon: '💊', color: '#0d9488', letter: 'Rx', days: [0,1,2,3,4,5,6] },
       { id: 'gym', name: 'Daily Gym', icon: '🏋️', color: '#e11d48', letter: 'G', days: [0,1,2,3,4,5,6] },
-      { id: 'snap8_am', name: 'SNAP-8 Cream (AM)', icon: '✨', color: '#9333ea', letter: 'SA', days: [0,1,2,3,4,5,6] },
-      { id: 'snap8_pm', name: 'SNAP-8 Cream (PM)', icon: '🌙', color: '#6366f1', letter: 'SP', days: [0,1,2,3,4,5,6] },
+      { id: 'snap8', name: 'SNAP-8 Cream', icon: '✨', color: '#9333ea', letter: 'S', type: 'dual_check', days: [0,1,2,3,4,5,6] },
       { id: 'meditation', name: 'Daily Meditation', icon: '🧘', color: '#2563eb', letter: 'M', days: [0,1,2,3,4,5,6] },
-      { id: 'water', name: 'Hydration', icon: '💧', color: '#0284c7', letter: 'H', days: [0,1,2,3,4,5,6] },
+      { id: 'water', name: 'Hydration (2L Target)', icon: '💧', color: '#0284c7', letter: 'H', type: 'cups', maxCups: 8, minCupsComplete: 4, days: [0,1,2,3,4,5,6] },
       { id: 'moodEnergy', name: 'Mood & Energy', icon: '🙂', color: '#ea580c', letter: 'Mo', type: 'scale', scaleMax: 5, days: [0,1,2,3,4,5,6] },
       { id: 'noAlcohol', name: 'No Alcohol Today', icon: '🚫', color: '#dc2626', letter: 'No', days: [0,1,2,3,4,5,6] },
       { id: 'sleepScore', name: 'Sleep Score 85%+', icon: '😴', color: '#059669', letter: 'Z', days: [0,1,2,3,4,5,6] },
@@ -861,11 +924,25 @@
       updateUI();
     }
 
+    function isHabitDone(habit, rawValue) {
+      if (!rawValue) return false;
+      if (habit.type === 'cups') {
+        return typeof rawValue === 'number' && rawValue >= (habit.minCupsComplete || 4);
+      }
+      if (habit.type === 'dual_check') {
+        return typeof rawValue === 'object' && !!rawValue.am && !!rawValue.pm;
+      }
+      if (habit.type === 'scale') {
+        return typeof rawValue === 'number' && rawValue > 0;
+      }
+      return !!rawValue;
+    }
+
     function isDayComplete(dateObj) {
       const dayHabits = getEnabledHabitsForDate(dateObj);
       if (dayHabits.length === 0) return false;
       const rec = trackerData[formatDateKey(dateObj)] || {};
-      const doneCount = dayHabits.filter(h => !!rec[h.id]).length;
+      const doneCount = dayHabits.filter(h => isHabitDone(h, rec[h.id])).length;
       return doneCount >= Math.min(3, dayHabits.length);
     }
 
@@ -905,7 +982,7 @@
         const dayHabits = getEnabledHabitsForDate(d);
         const rec = trackerData[formatDateKey(d)] || {};
         possible += dayHabits.length;
-        done += dayHabits.filter(h => !!rec[h.id]).length;
+        done += dayHabits.filter(h => isHabitDone(h, rec[h.id])).length;
         d.setDate(d.getDate() - 1);
       }
       return possible ? Math.round((done / possible) * 100) : 0;
@@ -954,9 +1031,8 @@
         listEl.innerHTML = `<div class="empty-state">No habits enabled for this day. Tap ⚙️ at the top to choose habits to track!</div>`;
       } else {
         activeHabits.forEach(habit => {
-          const isScale = habit.type === 'scale';
           const rawValue = currentDayData[habit.id];
-          const isDone = !!rawValue;
+          const isDone = isHabitDone(habit, rawValue);
           if (isDone) completedCount++;
 
           const card = document.createElement('div');
@@ -970,7 +1046,89 @@
             card.style.background = 'var(--bg-card)';
           }
 
-          if (isScale) {
+          if (habit.type === 'cups') {
+            const cupsLogged = typeof rawValue === 'number' ? rawValue : 0;
+            const litersLogged = (cupsLogged * 0.25).toFixed(2);
+            let subText = `${litersLogged}L / 2L (${cupsLogged}/8 cups)`;
+            if (cupsLogged >= 8) subText += ' - 2L Goal Met!';
+            else if (cupsLogged >= 4) subText += ' - 1L Met (Done)';
+            else subText += ' - Tap cups to log (4 cups = 1L min)';
+
+            let cupsHtml = '';
+            for (let c = 1; c <= 8; c++) {
+              const active = c <= cupsLogged;
+              cupsHtml += `
+                <div class="cup-btn ${active ? 'active' : ''}" 
+                     style="${active ? `background: ${habit.color};` : ''}" 
+                     data-cup="${c}" title="${c} cup (${c * 250}ml)">
+                  ${c}
+                </div>
+              `;
+            }
+
+            card.innerHTML = `
+              <div class="habit-main-row">
+                <div class="habit-info">
+                  <div class="habit-icon-bg" style="${cupsLogged > 0 ? `background: ${habit.color}20; color: ${habit.color}` : ''}">
+                    ${habit.icon}
+                  </div>
+                  <div>
+                    <div class="habit-name">${habit.name}</div>
+                    <div class="habit-sub">${subText}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="cups-row">${cupsHtml}</div>
+            `;
+
+            card.querySelectorAll('.cup-btn').forEach(btn => {
+              btn.onclick = (e) => {
+                e.stopPropagation();
+                setCupCount(habit.id, parseInt(btn.dataset.cup, 10));
+              };
+            });
+          } else if (habit.type === 'dual_check') {
+            const dualVal = (typeof rawValue === 'object' && rawValue) ? rawValue : { am: false, pm: false };
+            let subText = 'Tap AM and PM when applied';
+            if (dualVal.am && dualVal.pm) subText = 'Completed (AM & PM)';
+            else if (dualVal.am) subText = 'AM Done (PM Pending)';
+            else if (dualVal.pm) subText = 'PM Done (AM Pending)';
+
+            card.innerHTML = `
+              <div class="habit-main-row">
+                <div class="habit-info">
+                  <div class="habit-icon-bg" style="${(dualVal.am || dualVal.pm) ? `background: ${habit.color}20; color: ${habit.color}` : ''}">
+                    ${habit.icon}
+                  </div>
+                  <div>
+                    <div class="habit-name">${habit.name}</div>
+                    <div class="habit-sub">${subText}</div>
+                  </div>
+                </div>
+                <div class="dual-check-row">
+                  <div class="dual-check-btn ${dualVal.am ? 'active' : ''}" 
+                       style="${dualVal.am ? `background: ${habit.color};` : ''}" 
+                       id="dual_am_${habit.id}">
+                    ${dualVal.am ? '✓' : ''} AM
+                  </div>
+                  <div class="dual-check-btn ${dualVal.pm ? 'active' : ''}" 
+                       style="${dualVal.pm ? `background: ${habit.color};` : ''}" 
+                       id="dual_pm_${habit.id}">
+                    ${dualVal.pm ? '✓' : ''} PM
+                  </div>
+                </div>
+              </div>
+            `;
+
+            card.querySelector(`#dual_am_${habit.id}`).onclick = (e) => {
+              e.stopPropagation();
+              toggleDualCheck(habit.id, 'am');
+            };
+            card.querySelector(`#dual_pm_${habit.id}`).onclick = (e) => {
+              e.stopPropagation();
+              toggleDualCheck(habit.id, 'pm');
+            };
+          } else if (habit.type === 'scale') {
             const max = habit.scaleMax || 5;
             let btnsHtml = '';
             for (let v = 1; v <= max; v++) {
@@ -1045,6 +1203,30 @@
       updateUI();
     }
 
+    function setCupCount(habitId, count) {
+      const dateKey = formatDateKey(selectedDate);
+      if (!trackerData[dateKey]) {
+        trackerData[dateKey] = {};
+      }
+      const current = trackerData[dateKey][habitId] || 0;
+      // Toggle off if clicking current cup level
+      trackerData[dateKey][habitId] = current === count ? count - 1 : count;
+      saveStorage();
+      updateUI();
+    }
+
+    function toggleDualCheck(habitId, slot) {
+      const dateKey = formatDateKey(selectedDate);
+      if (!trackerData[dateKey]) {
+        trackerData[dateKey] = {};
+      }
+      const current = trackerData[dateKey][habitId] || { am: false, pm: false };
+      current[slot] = !current[slot];
+      trackerData[dateKey][habitId] = current;
+      saveStorage();
+      updateUI();
+    }
+
     function setScaleValue(habitId, value) {
       const dateKey = formatDateKey(selectedDate);
       if (!trackerData[dateKey]) {
@@ -1093,14 +1275,20 @@
         } else {
           dayHabits.forEach(h => {
             const rawValue = dayRecord[h.id];
-            const isDone = !!rawValue;
+            const isDone = isHabitDone(h, rawValue);
             if (isDone) doneNum++;
 
-            const isScale = h.type === 'scale';
-            const symbolContent = isDone ? (isScale ? rawValue : '✓') : '';
-            const titleText = isDone
-              ? (isScale ? `${h.name}: ${rawValue}/${h.scaleMax || 5}` : `${h.name}: Done`)
-              : `${h.name}: Pending`;
+            let symbolContent = '';
+            if (isDone) {
+              if (h.type === 'scale') symbolContent = rawValue;
+              else if (h.type === 'cups') symbolContent = rawValue;
+              else symbolContent = '✓';
+            } else if (h.type === 'dual_check' && rawValue && (rawValue.am || rawValue.pm)) {
+              symbolContent = '½';
+            }
+
+            let titleText = `${h.name}: ${isDone ? 'Done' : 'Pending'}`;
+            if (h.type === 'cups') titleText = `${h.name}: ${rawValue || 0}/8 cups (${((rawValue || 0) * 0.25).toFixed(2)}L)`;
 
             columnsHtml += `
               <div class="dot-column">
