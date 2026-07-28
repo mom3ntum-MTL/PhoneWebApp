@@ -5,21 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Reta Track">
-  <meta name="theme-color" content="#0b132b">
-  <title>Retatrutide Tracker</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="My Reta Tracker">
+  <meta name="theme-color" content="#f8fafc">
+  <title>My Reta Tracker</title>
   <style>
     :root {
-      --bg-main: #0b132b;
-      --bg-card: #1c2541;
-      --bg-input: #2a385b;
-      --accent-simon: #3a86ff;
-      --accent-marc: #8338ec;
-      --accent-green: #06d6a0;
-      --text-primary: #ffffff;
-      --text-secondary: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-input: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+
+      /* Simon Theme Colors (Electric Blue / Cyan) */
+      --simon-primary: #3a86ff;
+      --simon-secondary: #00f5d4;
+      --simon-point: #00f5d4;
+      --simon-gradient-start: rgba(58, 134, 255, 0.4);
+
+      /* Marc Theme Colors (Purple / Coral Orange) */
+      --marc-primary: #8338ec;
+      --marc-secondary: #ff007f;
+      --marc-point: #ffbe0b;
+      --marc-gradient-start: rgba(131, 56, 236, 0.4);
+
+      /* Dynamic Theme Variables (default to Simon) */
+      --theme-primary: var(--simon-primary);
+      --theme-secondary: var(--simon-secondary);
+      --theme-point: var(--simon-point);
     }
 
     * {
@@ -40,6 +55,7 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
+      transition: background-color 0.3s ease;
     }
 
     header {
@@ -50,55 +66,67 @@
     }
 
     .app-title {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 800;
       letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #06d6a0, #3a86ff);
+      background: linear-gradient(135deg, #00e676, var(--theme-primary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      transition: all 0.3s ease;
     }
 
-    /* User Profile Selector */
-    .user-toggle {
+    /* Distinct User Profile Toggle Switch */
+    .user-toggle-container {
       display: flex;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 30px;
-      padding: 4px;
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 3px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      gap: 3px;
     }
 
-    .user-btn {
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
+    .user-toggle-btn {
       border: none;
       background: transparent;
+      padding: 7px 16px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 800;
       color: var(--text-secondary);
       cursor: pointer;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .user-btn.active-simon {
-      background: var(--accent-simon);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(58, 134, 255, 0.4);
+    /* Simon Specific Active Button Style */
+    .user-toggle-btn.simon-btn.active {
+      background: linear-gradient(135deg, #3a86ff, #00f5d4);
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(58, 134, 255, 0.4);
     }
 
-    .user-btn.active-marc {
-      background: var(--accent-marc);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(131, 56, 236, 0.4);
+    /* Marc Specific Active Button Style */
+    .user-toggle-btn.marc-btn.active {
+      background: linear-gradient(135deg, #8338ec, #ff007f);
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(131, 56, 236, 0.4);
     }
 
-    /* Card Styling */
+    .user-toggle-btn:active {
+      transform: scale(0.95);
+    }
+
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 24px;
       padding: 20px;
       margin-bottom: 16px;
-      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.35);
+      box-shadow: var(--card-shadow);
+      transition: border-color 0.3s ease;
     }
 
     .card-label {
@@ -108,24 +136,49 @@
       color: var(--text-secondary);
       font-weight: 700;
       margin-bottom: 10px;
-    }
-
-    /* Date Bar */
-    .date-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
+    /* Date Bar & Picker Trigger */
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-display-wrapper {
+      text-align: center;
+      flex: 1;
+      cursor: pointer;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    .date-display-wrapper:active {
+      transform: scale(0.98);
+      background: rgba(0, 0, 0, 0.05);
+    }
+
     .date-display {
-      font-size: 1.2rem;
+      font-size: 1.12rem;
       font-weight: 700;
-      color: #fff;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .date-sub {
       font-size: 0.78rem;
-      color: var(--text-secondary);
+      color: var(--theme-primary);
+      font-weight: 600;
       margin-top: 2px;
     }
 
@@ -133,34 +186,36 @@
       background: var(--bg-input);
       border: 1px solid var(--border-color);
       color: var(--text-primary);
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       border-radius: 14px;
       font-size: 1.2rem;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.1s ease;
+      transition: transform 0.1s ease, background 0.2s ease;
     }
 
     .date-nav-btn:active {
       transform: scale(0.92);
-      background: rgba(255,255,255,0.15);
+      background: #e2e8f0;
     }
 
-    /* Dosage Controls */
     .dose-value-container {
       text-align: center;
-      margin: 12px 0 18px 0;
+      margin: 10px 0 18px 0;
     }
 
     .dose-num {
       font-size: 3.8rem;
       font-weight: 800;
       line-height: 1;
+      color: var(--theme-primary);
       font-feature-settings: "tnum";
       font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       transition: color 0.3s ease;
     }
 
@@ -195,7 +250,7 @@
     }
 
     .step-btn:active {
-      background: rgba(255, 255, 255, 0.2);
+      background: #e2e8f0;
       transform: scale(0.93);
     }
 
@@ -222,10 +277,11 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: #ffffff;
+      background: var(--theme-primary);
       cursor: pointer;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.5);
-      border: 2px solid var(--bg-main);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+      border: 3px solid #ffffff;
+      transition: background 0.3s ease;
     }
 
     .range-ticks {
@@ -257,14 +313,15 @@
     .inject-btn.pending {
       background: var(--bg-card);
       color: var(--text-secondary);
-      border: 2px dashed rgba(255, 255, 255, 0.18);
+      border: 2px dashed rgba(0, 0, 0, 0.15);
+      box-shadow: var(--card-shadow);
     }
 
     .inject-btn.completed {
-      background: var(--accent-green);
+      background: #00e676;
       color: #032b20;
-      box-shadow: 0 10px 30px rgba(6, 214, 160, 0.45);
-      border: 2px solid var(--accent-green);
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+      border: 2px solid #00e676;
     }
 
     .status-icon {
@@ -272,106 +329,333 @@
       line-height: 1;
     }
 
-    /* History Feed */
-    .history-header {
+    .graph-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
-      padding: 0 4px;
     }
 
-    .history-list {
+    .time-filter {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      background: var(--bg-input);
+      border-radius: 12px;
+      padding: 3px;
+      gap: 2px;
     }
 
-    .history-item {
+    .filter-btn {
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn.active {
       background: var(--bg-card);
+      color: var(--theme-primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      margin-top: 10px;
+    }
+
+    svg.chart-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .chart-grid-line {
+      stroke: rgba(0, 0, 0, 0.05);
+      stroke-dasharray: 4;
+    }
+
+    .chart-axis-label {
+      font-size: 10px;
+      fill: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke: var(--theme-primary);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.3s ease;
+    }
+
+    .chart-area {
+      fill: url(#chartGradient);
+      opacity: 0.25;
+    }
+
+    .chart-point {
+      stroke: #ffffff;
+      stroke-width: 2.5;
+      r: 6;
+      cursor: pointer;
+      transition: fill 0.3s ease;
+    }
+
+    .chart-point.pending-point {
+      fill: #cbd5e1 !important;
+      stroke: #ffffff;
+      stroke-width: 2;
+      r: 4.5;
+      filter: none;
+      cursor: pointer;
+    }
+
+    .empty-chart-msg {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+
+    /* Serum Concentration Stats Badge */
+    .serum-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--theme-primary);
+      background: rgba(0, 0, 0, 0.04);
+      padding: 3px 8px;
+      border-radius: 8px;
       border: 1px solid var(--border-color);
-      border-radius: 18px;
-      padding: 14px 18px;
+    }
+
+    .info-note {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    /* Modal Overlay for Interactive Calendar */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .calendar-card {
+      background: var(--bg-card);
+      border-radius: 28px;
+      padding: 20px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      transform: scale(0.92);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-overlay.active .calendar-card {
+      transform: scale(1);
+    }
+
+    .cal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 16px;
     }
 
-    .history-date {
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-
-    .history-time {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      margin-top: 3px;
-    }
-
-    .history-dose-badge {
-      text-align: right;
-    }
-
-    .history-dose {
+    .cal-month-title {
+      font-size: 1.05rem;
       font-weight: 800;
-      font-size: 1.1rem;
+      color: var(--text-primary);
     }
 
-    .status-pill {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-top: 2px;
+    .cal-nav-btn {
+      background: var(--bg-input);
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .status-pill.done {
-      background: rgba(6, 214, 160, 0.15);
-      color: var(--accent-green);
+    .cal-nav-btn:active {
+      background: #e2e8f0;
     }
 
-    .status-pill.pending {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-secondary);
-    }
-
-    .empty-state {
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
       text-align: center;
-      padding: 32px 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
       color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .cal-day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
       font-size: 0.88rem;
-      background: var(--bg-card);
-      border-radius: 18px;
-      border: 1px dashed var(--border-color);
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+      background: transparent;
+    }
+
+    .cal-day-cell:hover:not(.empty) {
+      background: var(--bg-input);
+    }
+
+    .cal-day-cell.other-month {
+      color: #cbd5e1;
+    }
+
+    .cal-day-cell.selected {
+      background: var(--theme-primary) !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .cal-day-cell.today:not(.selected) {
+      border: 2px solid var(--theme-primary);
+      color: var(--theme-primary);
+      font-weight: 800;
+    }
+
+    .cal-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 3px;
+    }
+
+    .cal-dot.injected {
+      background: var(--theme-point);
+    }
+
+    .cal-dot.pending {
+      background: #94a3b8;
+    }
+
+    .cal-day-cell.selected .cal-dot {
+      background: #ffffff !important;
+    }
+
+    .cal-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .cal-today-btn {
+      background: transparent;
+      border: none;
+      color: var(--theme-primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    .cal-close-btn {
+      background: var(--bg-input);
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 10px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <!-- App Header & User Switcher -->
   <header>
-    <div class="app-title">RETA TRACK</div>
-    <div class="user-toggle">
-      <button id="btnSimon" onclick="switchUser('Simon')" class="user-btn active-simon">Simon</button>
-      <button id="btnMarc" onclick="switchUser('Marc')" class="user-btn">Marc</button>
+    <div class="app-title">MY RETA TRACKER</div>
+    
+    <!-- User Switcher with distinct color accents -->
+    <div class="user-toggle-container">
+      <button id="userBtnSimon" class="user-toggle-btn simon-btn active" onclick="switchUser('Simon')">
+        <span>👤</span> Simon
+      </button>
+      <button id="userBtnMarc" class="user-toggle-btn marc-btn" onclick="switchUser('Marc')">
+        <span>👤</span> Marc
+      </button>
     </div>
   </header>
 
-  <!-- Sunday Date Selection Card -->
+  <!-- Date Selector Card -->
   <div class="card">
-    <div class="card-label">Injection Week (Sunday)</div>
+    <div class="card-label">Injection Date</div>
     <div class="date-row">
-      <button onclick="shiftWeek(-1)" class="date-nav-btn">‹</button>
-      <div style="text-align: center;">
-        <div id="sundayDisplay" class="date-display">--</div>
-        <div id="sundaySub" class="date-sub">Current Week</div>
+      <button onclick="shiftDay(-1)" class="date-nav-btn" aria-label="Previous day">‹</button>
+      
+      <div class="date-display-wrapper" onclick="openCalendarModal()">
+        <div id="dateDisplay" class="date-display">
+          <span>--</span> 📅
+        </div>
+        <div id="dateSub" class="date-sub">Tap to open calendar</div>
       </div>
-      <button onclick="shiftWeek(1)" class="date-nav-btn">›</button>
+
+      <button onclick="shiftDay(1)" class="date-nav-btn" aria-label="Next day">›</button>
     </div>
   </div>
 
-  <!-- Dosage Control Card -->
+  <!-- Dosage Slider Card -->
   <div class="card">
     <div class="card-label">Target Dosage</div>
     <div class="dose-value-container">
@@ -393,29 +677,87 @@
     </div>
   </div>
 
-  <!-- Big Visual Check Toggle Button -->
+  <!-- Injection Action Button -->
   <button id="injectBtn" onclick="toggleInjection()" class="inject-btn pending">
     <span id="injectIcon" class="status-icon">⚪</span>
     <span id="injectText">Mark as Injected</span>
   </button>
 
-  <!-- History Log -->
-  <div class="history-header">
-    <div class="card-label" style="margin: 0;" id="historyLabel">Simon's History</div>
+  <!-- Graphic 1: Logged Dosage History -->
+  <div class="card" style="padding-bottom: 14px;">
+    <div class="graph-header">
+      <div class="card-label" style="margin: 0;" id="historyCardTitle">Simon's Dosage History</div>
+      <div class="time-filter">
+        <button id="doseFilter7" class="filter-btn" onclick="setDoseFilter(7)">1 Week</button>
+        <button id="doseFilter30" class="filter-btn active" onclick="setDoseFilter(30)">1 Month</button>
+        <button id="doseFilter90" class="filter-btn" onclick="setDoseFilter(90)">3 Months</button>
+      </div>
+    </div>
+
+    <div id="doseChartWrapper" class="chart-container">
+      <!-- SVG Line Chart rendered dynamically -->
+    </div>
   </div>
-  <div id="historyList" class="history-list"></div>
+
+  <!-- Graphic 2: Estimated Cumulative Active Serum Concentration -->
+  <div class="card" style="padding-bottom: 14px;">
+    <div class="graph-header">
+      <div>
+        <div class="card-label" style="margin: 0;">Active Serum Load</div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">Retatrutide ~6-day Half-Life Decay</div>
+      </div>
+      <div class="time-filter">
+        <button id="serumFilter7" class="filter-btn" onclick="setSerumFilter(7)">1 Week</button>
+        <button id="serumFilter30" class="filter-btn active" onclick="setSerumFilter(30)">1 Month</button>
+        <button id="serumFilter90" class="filter-btn" onclick="setSerumFilter(90)">3 Months</button>
+      </div>
+    </div>
+
+    <div id="serumChartWrapper" class="chart-container">
+      <!-- SVG Serum Curve rendered dynamically -->
+    </div>
+
+    <div class="info-note">
+      💡 <strong>Pharmacokinetics note:</strong> Active serum level is estimated in effective mg based on the ~6.0 day (144 hr) elimination half-life of Retatrutide. Age/weight are not required to calculate relative dose accumulation.
+    </div>
+  </div>
+
+  <!-- Calendar Picker Modal -->
+  <div id="calendarModal" class="modal-overlay" onclick="closeCalendarOnOverlay(event)">
+    <div class="calendar-card">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="changeCalMonth(-1)">‹</button>
+        <div id="calMonthTitle" class="cal-month-title">October 2026</div>
+        <button class="cal-nav-btn" onclick="changeCalMonth(1)">›</button>
+      </div>
+
+      <div class="cal-weekdays">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+
+      <div id="calGrid" class="cal-grid">
+        <!-- Day cells populated dynamically -->
+      </div>
+
+      <div class="cal-actions">
+        <button class="cal-today-btn" onclick="selectTodayInCalendar()">Jump to Today</button>
+        <button class="cal-close-btn" onclick="closeCalendarModal()">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     let currentUser = 'Simon';
-    let selectedSunday = new Date();
+    let selectedDate = new Date();
+    let calViewDate = new Date();
+    let allUserData = {
+      Simon: {},
+      Marc: {}
+    };
     let historyData = {};
 
-    function getSundayDate(d) {
-      const date = new Date(d);
-      const day = date.getDay();
-      const diff = date.getDate() - day;
-      return new Date(date.setDate(diff));
-    }
+    let doseDaysFilter = 30;  // 7, 30, 90
+    let serumDaysFilter = 30; // 7, 30, 90
 
     function formatDateKey(dateObj) {
       const y = dateObj.getFullYear();
@@ -425,69 +767,106 @@
     }
 
     function formatDateDisplay(dateObj) {
-      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
       return dateObj.toLocaleDateString('en-US', options);
     }
 
     function init() {
-      selectedSunday = getSundayDate(new Date());
       loadStorage();
+      updateUserTheme();
       updateUI();
     }
 
     function loadStorage() {
-      const stored = localStorage.getItem('reta_tracker_data_v1');
-      if (stored) {
+      const savedActiveUser = localStorage.getItem('reta_active_user_v3');
+      if (savedActiveUser && (savedActiveUser === 'Simon' || savedActiveUser === 'Marc')) {
+        currentUser = savedActiveUser;
+      }
+
+      const storedUsers = localStorage.getItem('reta_users_data_v3');
+      if (storedUsers) {
         try {
-          historyData = JSON.parse(stored);
+          allUserData = JSON.parse(storedUsers);
         } catch (e) {
-          historyData = {};
+          allUserData = { Simon: {}, Marc: {} };
+        }
+      } else {
+        // Migration from previous key if present
+        const prevData = localStorage.getItem('reta_users_data_v2');
+        if (prevData) {
+          try { allUserData = JSON.parse(prevData); } catch(e) {}
         }
       }
-      if (!historyData.Simon) historyData.Simon = {};
-      if (!historyData.Marc) historyData.Marc = {};
+
+      if (!allUserData.Simon) allUserData.Simon = {};
+      if (!allUserData.Marc) allUserData.Marc = {};
+
+      historyData = allUserData[currentUser];
     }
 
     function saveStorage() {
-      localStorage.setItem('reta_tracker_data_v1', JSON.stringify(historyData));
+      allUserData[currentUser] = historyData;
+      localStorage.setItem('reta_users_data_v3', JSON.stringify(allUserData));
+      localStorage.setItem('reta_active_user_v3', currentUser);
     }
 
-    function switchUser(user) {
-      currentUser = user;
-      document.getElementById('btnSimon').className = 'user-btn ' + (user === 'Simon' ? 'active-simon' : '');
-      document.getElementById('btnMarc').className = 'user-btn ' + (user === 'Marc' ? 'active-marc' : '');
+    function switchUser(userName) {
+      if (userName === currentUser) return;
+
+      allUserData[currentUser] = historyData;
+      currentUser = userName;
+      historyData = allUserData[currentUser] || {};
       
-      const themeColor = user === 'Simon' ? '#3a86ff' : '#8338ec';
-      document.getElementById('doseVal').style.color = themeColor;
-
+      saveStorage();
+      updateUserTheme();
       updateUI();
     }
 
-    function shiftWeek(weeks) {
-      selectedSunday.setDate(selectedSunday.getDate() + (weeks * 7));
-      updateUI();
+    function updateUserTheme() {
+      const btnSimon = document.getElementById('userBtnSimon');
+      const btnMarc = document.getElementById('userBtnMarc');
+      const root = document.documentElement;
+
+      if (currentUser === 'Simon') {
+        btnSimon.classList.add('active');
+        btnMarc.classList.remove('active');
+
+        root.style.setProperty('--theme-primary', 'var(--simon-primary)');
+        root.style.setProperty('--theme-secondary', 'var(--simon-secondary)');
+        root.style.setProperty('--theme-point', 'var(--simon-point)');
+      } else {
+        btnMarc.classList.add('active');
+        btnSimon.classList.remove('active');
+
+        root.style.setProperty('--theme-primary', 'var(--marc-primary)');
+        root.style.setProperty('--theme-secondary', 'var(--marc-secondary)');
+        root.style.setProperty('--theme-point', 'var(--marc-point)');
+      }
+
+      document.getElementById('historyCardTitle').innerText = `${currentUser}'s Dosage History`;
     }
 
-    function getRecordForCurrentSunday() {
-      const key = formatDateKey(selectedSunday);
-      return historyData[currentUser][key] || null;
+    function shiftDay(days) {
+      selectedDate.setDate(selectedDate.getDate() + days);
+      updateUI();
     }
 
     function updateUI() {
-      const dateKey = formatDateKey(selectedSunday);
-      const todaySundayKey = formatDateKey(getSundayDate(new Date()));
-      
-      document.getElementById('sundayDisplay').innerText = formatDateDisplay(selectedSunday);
-      const subEl = document.getElementById('sundaySub');
-      if (dateKey === todaySundayKey) {
-        subEl.innerText = 'Current Week';
-        subEl.style.color = 'var(--accent-green)';
+      const dateKey = formatDateKey(selectedDate);
+      const todayKey = formatDateKey(new Date());
+
+      document.getElementById('dateDisplay').innerHTML = `<span>${formatDateDisplay(selectedDate)}</span> 📅`;
+
+      const subEl = document.getElementById('dateSub');
+      if (dateKey === todayKey) {
+        subEl.innerText = '✨ Today (Tap for calendar)';
+        subEl.style.color = 'var(--theme-primary)';
       } else {
-        subEl.innerText = dateKey;
+        subEl.innerText = '📅 Tap to change date';
         subEl.style.color = 'var(--text-secondary)';
       }
 
-      const record = getRecordForCurrentSunday();
+      const record = historyData[dateKey] || null;
       let doseVal = 2.0;
       let isInjected = false;
 
@@ -513,15 +892,15 @@
         text.innerText = 'Mark as Injected';
       }
 
-      document.getElementById('historyLabel').innerText = `${currentUser}'s History`;
-      renderHistory();
+      renderDoseChart();
+      renderSerumChart();
     }
 
     function adjustDose(delta) {
       let currentVal = parseFloat(document.getElementById('doseSlider').value);
       let newVal = Math.min(3.0, Math.max(1.0, currentVal + delta));
       newVal = Math.round(newVal * 10) / 10;
-      
+
       document.getElementById('doseSlider').value = newVal;
       onSliderChange(newVal);
     }
@@ -529,11 +908,12 @@
     function onSliderChange(val) {
       const dose = parseFloat(val);
       document.getElementById('doseVal').innerText = dose.toFixed(1);
-      saveCurrentState(dose, getRecordForCurrentSunday()?.injected || false);
+      saveCurrentState(dose, historyData[formatDateKey(selectedDate)]?.injected || false);
     }
 
     function toggleInjection() {
-      const record = getRecordForCurrentSunday();
+      const dateKey = formatDateKey(selectedDate);
+      const record = historyData[dateKey];
       const currentDose = parseFloat(document.getElementById('doseSlider').value);
       const newInjectedState = !(record?.injected || false);
 
@@ -542,51 +922,395 @@
     }
 
     function saveCurrentState(dose, injected) {
-      const dateKey = formatDateKey(selectedSunday);
+      const dateKey = formatDateKey(selectedDate);
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      historyData[currentUser][dateKey] = {
+      historyData[dateKey] = {
         dose: dose,
         injected: injected,
-        timestamp: injected ? timeStr : (historyData[currentUser][dateKey]?.timestamp || '')
+        timestamp: injected ? timeStr : (historyData[dateKey]?.timestamp || '')
       };
 
       saveStorage();
+      renderDoseChart();
+      renderSerumChart();
     }
 
-    function renderHistory() {
-      const historyEl = document.getElementById('historyList');
-      historyEl.innerHTML = '';
+    function openCalendarModal() {
+      calViewDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      renderCalendarModal();
+      document.getElementById('calendarModal').classList.add('active');
+    }
 
-      const userRecords = historyData[currentUser] || {};
-      const sortedKeys = Object.keys(userRecords).sort().reverse();
+    function closeCalendarModal() {
+      document.getElementById('calendarModal').classList.remove('active');
+    }
 
-      if (sortedKeys.length === 0) {
-        historyEl.innerHTML = '<div class="empty-state">No recorded injections yet for ' + currentUser + '.</div>';
+    function closeCalendarOnOverlay(e) {
+      if (e.target.id === 'calendarModal') {
+        closeCalendarModal();
+      }
+    }
+
+    function changeCalMonth(delta) {
+      calViewDate.setMonth(calViewDate.getMonth() + delta);
+      renderCalendarModal();
+    }
+
+    function selectTodayInCalendar() {
+      selectedDate = new Date();
+      updateUI();
+      closeCalendarModal();
+    }
+
+    function renderCalendarModal() {
+      const year = calViewDate.getFullYear();
+      const month = calViewDate.getMonth();
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", 
+                          "July", "August", "September", "October", "November", "December"];
+      document.getElementById('calMonthTitle').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDayIdx = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const prevMonthDays = new Date(year, month, 0).getDate();
+
+      const calGrid = document.getElementById('calGrid');
+      calGrid.innerHTML = '';
+
+      const selectedKey = formatDateKey(selectedDate);
+      const todayKey = formatDateKey(new Date());
+
+      // Prev month filler
+      for (let i = firstDayIdx - 1; i >= 0; i--) {
+        const d = prevMonthDays - i;
+        const prevDate = new Date(year, month - 1, d);
+        
+        const cell = document.createElement('div');
+        cell.className = 'cal-day-cell other-month';
+        cell.innerText = d;
+        cell.onclick = () => {
+          selectedDate = prevDate;
+          updateUI();
+          closeCalendarModal();
+        };
+        calGrid.appendChild(cell);
+      }
+
+      // Current month cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const currentDate = new Date(year, month, d);
+        const cellKey = formatDateKey(currentDate);
+
+        const cell = document.createElement('div');
+        let classes = 'cal-day-cell';
+        if (cellKey === selectedKey) classes += ' selected';
+        if (cellKey === todayKey) classes += ' today';
+        cell.className = classes;
+        cell.innerText = d;
+
+        // Add history indicator dot
+        if (historyData[cellKey]) {
+          const dot = document.createElement('div');
+          dot.className = 'cal-dot ' + (historyData[cellKey].injected ? 'injected' : 'pending');
+          cell.appendChild(dot);
+        }
+
+        cell.onclick = () => {
+          selectedDate = currentDate;
+          updateUI();
+          closeCalendarModal();
+        };
+
+        calGrid.appendChild(cell);
+      }
+
+      // Next month filler
+      const totalCells = firstDayIdx + daysInMonth;
+      const nextMonthFiller = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= nextMonthFiller; d++) {
+        const nextDate = new Date(year, month + 1, d);
+        const cell = document.createElement('div');
+        cell.className = 'cal-day-cell other-month';
+        cell.innerText = d;
+        cell.onclick = () => {
+          selectedDate = nextDate;
+          updateUI();
+          closeCalendarModal();
+        };
+        calGrid.appendChild(cell);
+      }
+    }
+
+    function setDoseFilter(days) {
+      doseDaysFilter = days;
+      document.getElementById('doseFilter7').className = 'filter-btn ' + (days === 7 ? 'active' : '');
+      document.getElementById('doseFilter30').className = 'filter-btn ' + (days === 30 ? 'active' : '');
+      document.getElementById('doseFilter90').className = 'filter-btn ' + (days === 90 ? 'active' : '');
+      renderDoseChart();
+    }
+
+    function renderDoseChart() {
+      const chartWrapper = document.getElementById('doseChartWrapper');
+      const allKeys = Object.keys(historyData).sort();
+
+      if (allKeys.length === 0) {
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">No dosage logs for ${currentUser} yet.</div>`;
         return;
       }
 
-      sortedKeys.forEach(key => {
-        const item = userRecords[key];
-        const [y, m, d] = key.split('-');
-        const displayDate = new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - doseDaysFilter);
+      const cutoffKey = formatDateKey(cutoffDate);
 
-        const row = document.createElement('div');
-        row.className = 'history-item';
-        row.innerHTML = `
-          <div>
-            <div class="history-date">${displayDate}</div>
-            <div class="history-time">${item.injected ? ('Injected at ' + item.timestamp) : 'Pending entry'}</div>
-          </div>
-          <div class="history-dose-badge">
-            <div class="history-dose">${item.dose.toFixed(1)} mg</div>
-            <span class="status-pill ${item.injected ? 'done' : 'pending'}">
-              ${item.injected ? '✓ Injected' : 'Pending'}
-            </span>
-          </div>
-        `;
-        historyEl.appendChild(row);
+      let filteredKeys = allKeys.filter(k => k >= cutoffKey);
+
+      if (filteredKeys.length === 0) {
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">No logs in past ${doseDaysFilter === 7 ? '1 Week' : doseDaysFilter === 30 ? '1 Month' : '3 Months'} for ${currentUser}.</div>`;
+        return;
+      }
+
+      const paddingLeft = 35;
+      const paddingRight = 15;
+      const paddingTop = 15;
+      const paddingBottom = 28;
+
+      const width = chartWrapper.clientWidth || 380;
+      const height = 200;
+
+      const chartW = width - paddingLeft - paddingRight;
+      const chartH = height - paddingTop - paddingBottom;
+
+      const minDose = 1.0;
+      const maxDose = 3.0;
+
+      function getX(index, total) {
+        if (total === 1) return paddingLeft + chartW / 2;
+        return paddingLeft + (index / (total - 1)) * chartW;
+      }
+
+      function getY(dose) {
+        const clamped = Math.min(maxDose, Math.max(minDose, dose));
+        const ratio = (clamped - minDose) / (maxDose - minDose);
+        return paddingTop + chartH - (ratio * chartH);
+      }
+
+      let points = [];
+      let pathD = '';
+      let areaD = '';
+
+      filteredKeys.forEach((key, idx) => {
+        const item = historyData[key];
+        const x = getX(idx, filteredKeys.length);
+        const y = getY(item.dose);
+        points.push({ x, y, key, item });
+
+        if (idx === 0) {
+          pathD += `M ${x} ${y}`;
+        } else {
+          pathD += ` L ${x} ${y}`;
+        }
       });
+
+      const firstX = points[0].x;
+      const lastX = points[points.length - 1].x;
+      const zeroY = paddingTop + chartH;
+      areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
+
+      const activePointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
+      const activeLineColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
+
+      let svgHtml = `
+        <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${activeLineColor}" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="${activeLineColor}" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Y Axis Grid -->
+          <line x1="${paddingLeft}" y1="${getY(1.0)}" x2="${width - paddingRight}" y2="${getY(1.0)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(1.0) + 3}" text-anchor="end" class="chart-axis-label">1.0</text>
+
+          <line x1="${paddingLeft}" y1="${getY(2.0)}" x2="${width - paddingRight}" y2="${getY(2.0)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(2.0) + 3}" text-anchor="end" class="chart-axis-label">2.0</text>
+
+          <line x1="${paddingLeft}" y1="${getY(3.0)}" x2="${width - paddingRight}" y2="${getY(3.0)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(3.0) + 3}" text-anchor="end" class="chart-axis-label">3.0</text>
+
+          <!-- Area & Line -->
+          <path d="${areaD}" class="chart-area" />
+          <path d="${pathD}" class="chart-line" />
+      `;
+
+      points.forEach((p, idx) => {
+        const [y, m, d] = p.key.split('-');
+        const shortDate = `${parseInt(m)}/${parseInt(d)}`;
+        const showLabel = points.length <= 7 || idx === 0 || idx === points.length - 1 || idx % Math.ceil(points.length / 5) === 0;
+
+        if (showLabel) {
+          svgHtml += `<text x="${p.x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${shortDate}</text>`;
+        }
+
+        const pointFill = p.item.injected ? activePointColor : '#cbd5e1';
+
+        svgHtml += `
+          <circle cx="${p.x}" cy="${p.y}" fill="${pointFill}" class="${p.item.injected ? 'chart-point' : 'chart-point pending-point'}" onclick="onPointClicked('${p.key}')">
+            <title>${p.key}: ${p.item.dose.toFixed(1)} mg (${p.item.injected ? 'Injected' : 'Pending'})</title>
+          </circle>
+        `;
+      });
+
+      svgHtml += `</svg>`;
+      chartWrapper.innerHTML = svgHtml;
+    }
+
+    function setSerumFilter(days) {
+      serumDaysFilter = days;
+      document.getElementById('serumFilter7').className = 'filter-btn ' + (days === 7 ? 'active' : '');
+      document.getElementById('serumFilter30').className = 'filter-btn ' + (days === 30 ? 'active' : '');
+      document.getElementById('serumFilter90').className = 'filter-btn ' + (days === 90 ? 'active' : '');
+      renderSerumChart();
+    }
+
+    function renderSerumChart() {
+      const chartWrapper = document.getElementById('serumChartWrapper');
+      const allKeys = Object.keys(historyData).sort();
+
+      const injectedKeys = allKeys.filter(k => historyData[k] && historyData[k].injected);
+
+      if (injectedKeys.length === 0) {
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">Log an injection to view active serum decay curve.</div>`;
+        return;
+      }
+
+      const totalDays = serumDaysFilter;
+      const today = new Date();
+      const dailyPoints = [];
+
+      // Calculate serum level for each day in range using ~6-day half life decay
+      const halfLife = 6.0; // Retatrutide elimination half-life in days
+
+      for (let i = totalDays - 1; i >= 0; i--) {
+        const evalDate = new Date(today);
+        evalDate.setDate(evalDate.getDate() - i);
+        const evalKey = formatDateKey(evalDate);
+
+        let activeSerumMg = 0;
+
+        // Sum exponential decay from all past injected doses up to evalDate
+        injectedKeys.forEach(injKey => {
+          const injDate = new Date(injKey);
+          const diffDays = (evalDate - injDate) / (1000 * 60 * 60 * 24);
+
+          if (diffDays >= 0) {
+            const dose = historyData[injKey].dose;
+            // Decay formula: A(t) = A0 * (0.5)^(t / t_half)
+            activeSerumMg += dose * Math.pow(0.5, diffDays / halfLife);
+          }
+        });
+
+        dailyPoints.push({
+          date: evalDate,
+          key: evalKey,
+          serum: activeSerumMg
+        });
+      }
+
+      const paddingLeft = 35;
+      const paddingRight = 15;
+      const paddingTop = 15;
+      const paddingBottom = 28;
+
+      const width = chartWrapper.clientWidth || 380;
+      const height = 200;
+
+      const chartW = width - paddingLeft - paddingRight;
+      const chartH = height - paddingTop - paddingBottom;
+
+      const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1.0);
+      const maxSerumAxis = Math.ceil(maxSerumCalculated * 1.25 * 10) / 10;
+
+      function getX(idx, total) {
+        if (total === 1) return paddingLeft + chartW / 2;
+        return paddingLeft + (idx / (total - 1)) * chartW;
+      }
+
+      function getY(val) {
+        const ratio = Math.min(1, Math.max(0, val / maxSerumAxis));
+        return paddingTop + chartH - (ratio * chartH);
+      }
+
+      let pathD = '';
+      dailyPoints.forEach((p, idx) => {
+        const x = getX(idx, dailyPoints.length);
+        const y = getY(p.serum);
+        if (idx === 0) pathD += `M ${x} ${y}`;
+        else pathD += ` L ${x} ${y}`;
+      });
+
+      const firstX = getX(0, dailyPoints.length);
+      const lastX = getX(dailyPoints.length - 1, dailyPoints.length);
+      const zeroY = paddingTop + chartH;
+      const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
+
+      const strokeColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
+      const pointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
+
+      let svgHtml = `
+        <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
+          <defs>
+            <linearGradient id="serumGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Grid lines -->
+          <line x1="${paddingLeft}" y1="${getY(maxSerumAxis)}" x2="${width - paddingRight}" y2="${getY(maxSerumAxis)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(maxSerumAxis) + 3}" text-anchor="end" class="chart-axis-label">${maxSerumAxis.toFixed(1)}</text>
+
+          <line x1="${paddingLeft}" y1="${getY(maxSerumAxis / 2)}" x2="${width - paddingRight}" y2="${getY(maxSerumAxis / 2)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(maxSerumAxis / 2) + 3}" text-anchor="end" class="chart-axis-label">${(maxSerumAxis / 2).toFixed(1)}</text>
+
+          <line x1="${paddingLeft}" y1="${getY(0)}" x2="${width - paddingRight}" y2="${getY(0)}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${getY(0) + 3}" text-anchor="end" class="chart-axis-label">0.0</text>
+
+          <path d="${areaD}" fill="url(#serumGradient)" />
+          <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      `;
+
+      dailyPoints.forEach((p, idx) => {
+        const x = getX(idx, dailyPoints.length);
+        const y = getY(p.serum);
+
+        const showLabel = dailyPoints.length <= 7 || idx === 0 || idx === dailyPoints.length - 1 || idx % Math.ceil(dailyPoints.length / 5) === 0;
+
+        if (showLabel) {
+          const m = p.date.getMonth() + 1;
+          const d = p.date.getDate();
+          svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${m}/${d}</text>`;
+        }
+
+        // Draw point on injection days or latest point
+        if (historyData[p.key]?.injected || idx === dailyPoints.length - 1) {
+          svgHtml += `
+            <circle cx="${x}" cy="${y}" r="5" fill="${pointColor}" stroke="#ffffff" stroke-width="2" onclick="onPointClicked('${p.key}')">
+              <title>${p.key}: ~${p.serum.toFixed(2)} mg active serum</title>
+            </circle>
+          `;
+        }
+      });
+
+      svgHtml += `</svg>`;
+      chartWrapper.innerHTML = svgHtml;
+    }
+
+    function onPointClicked(dateKey) {
+      const parts = dateKey.split('-');
+      selectedDate = new Date(parts[0], parts[1] - 1, parts[2]);
+      updateUI();
     }
 
     window.onload = init;
