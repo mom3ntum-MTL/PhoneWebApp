@@ -367,12 +367,14 @@
       width: 100%;
       height: 200px;
       margin-top: 10px;
+      overflow: hidden;
     }
 
     svg.chart-svg {
       width: 100%;
       height: 100%;
       overflow: visible;
+      display: block;
     }
 
     .chart-grid-line {
@@ -688,9 +690,9 @@
     <div class="graph-header">
       <div class="card-label" style="margin: 0;" id="historyCardTitle">Simon's Dosage History</div>
       <div class="time-filter">
-        <button id="doseFilter7" class="filter-btn" onclick="setDoseFilter(7)">1 Week</button>
         <button id="doseFilter30" class="filter-btn active" onclick="setDoseFilter(30)">1 Month</button>
         <button id="doseFilter90" class="filter-btn" onclick="setDoseFilter(90)">3 Months</button>
+        <button id="doseFilter180" class="filter-btn" onclick="setDoseFilter(180)">6 Months</button>
       </div>
     </div>
 
@@ -707,9 +709,9 @@
         <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">Retatrutide ~6-day Half-Life Decay</div>
       </div>
       <div class="time-filter">
-        <button id="serumFilter7" class="filter-btn" onclick="setSerumFilter(7)">1 Week</button>
         <button id="serumFilter30" class="filter-btn active" onclick="setSerumFilter(30)">1 Month</button>
         <button id="serumFilter90" class="filter-btn" onclick="setSerumFilter(90)">3 Months</button>
+        <button id="serumFilter180" class="filter-btn" onclick="setSerumFilter(180)">6 Months</button>
       </div>
     </div>
 
@@ -1044,9 +1046,9 @@
 
     function setDoseFilter(days) {
       doseDaysFilter = days;
-      document.getElementById('doseFilter7').className = 'filter-btn ' + (days === 7 ? 'active' : '');
       document.getElementById('doseFilter30').className = 'filter-btn ' + (days === 30 ? 'active' : '');
       document.getElementById('doseFilter90').className = 'filter-btn ' + (days === 90 ? 'active' : '');
+      document.getElementById('doseFilter180').className = 'filter-btn ' + (days === 180 ? 'active' : '');
       renderDoseChart();
     }
 
@@ -1066,7 +1068,7 @@
       let filteredKeys = allKeys.filter(k => k >= cutoffKey);
 
       if (filteredKeys.length === 0) {
-        chartWrapper.innerHTML = `<div class="empty-chart-msg">No logs in past ${doseDaysFilter === 7 ? '1 Week' : doseDaysFilter === 30 ? '1 Month' : '3 Months'} for ${currentUser}.</div>`;
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">No logs in past ${doseDaysFilter === 30 ? '1 Month' : doseDaysFilter === 90 ? '3 Months' : '6 Months'} for ${currentUser}.</div>`;
         return;
       }
 
@@ -1144,10 +1146,11 @@
           <path d="${pathD}" class="chart-line" />
       `;
 
+      const stepLabel = Math.max(1, Math.floor(points.length / 6));
       points.forEach((p, idx) => {
         const [y, m, d] = p.key.split('-');
         const shortDate = `${parseInt(m)}/${parseInt(d)}`;
-        const showLabel = points.length <= 7 || idx === 0 || idx === points.length - 1 || idx % Math.ceil(points.length / 5) === 0;
+        const showLabel = points.length <= 8 || idx === 0 || idx === points.length - 1 || idx % stepLabel === 0;
 
         if (showLabel) {
           svgHtml += `<text x="${p.x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${shortDate}</text>`;
@@ -1168,9 +1171,9 @@
 
     function setSerumFilter(days) {
       serumDaysFilter = days;
-      document.getElementById('serumFilter7').className = 'filter-btn ' + (days === 7 ? 'active' : '');
       document.getElementById('serumFilter30').className = 'filter-btn ' + (days === 30 ? 'active' : '');
       document.getElementById('serumFilter90').className = 'filter-btn ' + (days === 90 ? 'active' : '');
+      document.getElementById('serumFilter180').className = 'filter-btn ' + (days === 180 ? 'active' : '');
       renderSerumChart();
     }
 
@@ -1189,7 +1192,6 @@
       const today = new Date();
       const dailyPoints = [];
 
-      // Calculate serum level for each day in range using ~6-day half life decay
       const halfLife = 6.0; // Retatrutide elimination half-life in days
 
       for (let i = totalDays - 1; i >= 0; i--) {
@@ -1199,14 +1201,12 @@
 
         let activeSerumMg = 0;
 
-        // Sum exponential decay from all past injected doses up to evalDate
         injectedKeys.forEach(injKey => {
           const injDate = new Date(injKey);
           const diffDays = (evalDate - injDate) / (1000 * 60 * 60 * 24);
 
           if (diffDays >= 0) {
             const dose = historyData[injKey].dose;
-            // Decay formula: A(t) = A0 * (0.5)^(t / t_half)
             activeSerumMg += dose * Math.pow(0.5, diffDays / halfLife);
           }
         });
@@ -1281,11 +1281,12 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
+      const stepLabel = Math.max(1, Math.floor(dailyPoints.length / 6));
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
 
-        const showLabel = dailyPoints.length <= 7 || idx === 0 || idx === dailyPoints.length - 1 || idx % Math.ceil(dailyPoints.length / 5) === 0;
+        const showLabel = dailyPoints.length <= 8 || idx === 0 || idx === dailyPoints.length - 1 || idx % stepLabel === 0;
 
         if (showLabel) {
           const m = p.date.getMonth() + 1;
