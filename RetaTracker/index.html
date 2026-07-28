@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Reta Track">
+  <meta name="theme-color" content="#0b132b">
+  <title>Retatrutide Tracker</title>
+  <style>
+    :root {
+      --bg-main: #0b132b;
+      --bg-card: #1c2541;
+      --bg-input: #2a385b;
+      --accent-simon: #3a86ff;
+      --accent-marc: #8338ec;
+      --accent-green: #06d6a0;
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 16px 16px 32px 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 20px 0;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #06d6a0, #3a86ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* User Profile Selector */
+    .user-toggle {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 30px;
+      padding: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .user-btn {
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .user-btn.active-simon {
+      background: var(--accent-simon);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(58, 134, 255, 0.4);
+    }
+
+    .user-btn.active-marc {
+      background: var(--accent-marc);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(131, 56, 236, 0.4);
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.35);
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    /* Date Bar */
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .date-display {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .date-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .date-nav-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease;
+    }
+
+    .date-nav-btn:active {
+      transform: scale(0.92);
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Dosage Controls */
+    .dose-value-container {
+      text-align: center;
+      margin: 12px 0 18px 0;
+    }
+
+    .dose-num {
+      font-size: 3.8rem;
+      font-weight: 800;
+      line-height: 1;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s ease;
+    }
+
+    .dose-unit {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-left: 2px;
+    }
+
+    .dose-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.1s ease, background-color 0.2s ease;
+    }
+
+    .step-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(0.93);
+    }
+
+    .slider-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: var(--bg-input);
+      height: 12px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+      border: 2px solid var(--bg-main);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4px;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    /* Injection Toggle Button */
+    .inject-btn {
+      width: 100%;
+      padding: 20px;
+      border-radius: 22px;
+      border: none;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 20px;
+    }
+
+    .inject-btn.pending {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 2px dashed rgba(255, 255, 255, 0.18);
+    }
+
+    .inject-btn.completed {
+      background: var(--accent-green);
+      color: #032b20;
+      box-shadow: 0 10px 30px rgba(6, 214, 160, 0.45);
+      border: 2px solid var(--accent-green);
+    }
+
+    .status-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    /* History Feed */
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-date {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .history-time {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .history-dose-badge {
+      text-align: right;
+    }
+
+    .history-dose {
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .status-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .status-pill.done {
+      background: rgba(6, 214, 160, 0.15);
+      color: var(--accent-green);
+    }
+
+    .status-pill.pending {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      background: var(--bg-card);
+      border-radius: 18px;
+      border: 1px dashed var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header & User Switcher -->
+  <header>
+    <div class="app-title">RETA TRACK</div>
+    <div class="user-toggle">
+      <button id="btnSimon" onclick="switchUser('Simon')" class="user-btn active-simon">Simon</button>
+      <button id="btnMarc" onclick="switchUser('Marc')" class="user-btn">Marc</button>
+    </div>
+  </header>
+
+  <!-- Sunday Date Selection Card -->
+  <div class="card">
+    <div class="card-label">Injection Week (Sunday)</div>
+    <div class="date-row">
+      <button onclick="shiftWeek(-1)" class="date-nav-btn">‹</button>
+      <div style="text-align: center;">
+        <div id="sundayDisplay" class="date-display">--</div>
+        <div id="sundaySub" class="date-sub">Current Week</div>
+      </div>
+      <button onclick="shiftWeek(1)" class="date-nav-btn">›</button>
+    </div>
+  </div>
+
+  <!-- Dosage Control Card -->
+  <div class="card">
+    <div class="card-label">Target Dosage</div>
+    <div class="dose-value-container">
+      <span id="doseVal" class="dose-num">2.0</span>
+      <span class="dose-unit">mg</span>
+    </div>
+
+    <div class="dose-controls">
+      <button onclick="adjustDose(-0.1)" class="step-btn">−</button>
+      <div class="slider-wrapper">
+        <input type="range" id="doseSlider" min="1.0" max="3.0" step="0.1" value="2.0" oninput="onSliderChange(this.value)">
+        <div class="range-ticks">
+          <span>1.0 mg</span>
+          <span>2.0 mg</span>
+          <span>3.0 mg</span>
+        </div>
+      </div>
+      <button onclick="adjustDose(0.1)" class="step-btn">+</button>
+    </div>
+  </div>
+
+  <!-- Big Visual Check Toggle Button -->
+  <button id="injectBtn" onclick="toggleInjection()" class="inject-btn pending">
+    <span id="injectIcon" class="status-icon">⚪</span>
+    <span id="injectText">Mark as Injected</span>
+  </button>
+
+  <!-- History Log -->
+  <div class="history-header">
+    <div class="card-label" style="margin: 0;" id="historyLabel">Simon's History</div>
+  </div>
+  <div id="historyList" class="history-list"></div>
+
+  <script>
+    let currentUser = 'Simon';
+    let selectedSunday = new Date();
+    let historyData = {};
+
+    function getSundayDate(d) {
+      const date = new Date(d);
+      const day = date.getDay();
+      const diff = date.getDate() - day;
+      return new Date(date.setDate(diff));
+    }
+
+    function formatDateKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateDisplay(dateObj) {
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      return dateObj.toLocaleDateString('en-US', options);
+    }
+
+    function init() {
+      selectedSunday = getSundayDate(new Date());
+      loadStorage();
+      updateUI();
+    }
+
+    function loadStorage() {
+      const stored = localStorage.getItem('reta_tracker_data_v1');
+      if (stored) {
+        try {
+          historyData = JSON.parse(stored);
+        } catch (e) {
+          historyData = {};
+        }
+      }
+      if (!historyData.Simon) historyData.Simon = {};
+      if (!historyData.Marc) historyData.Marc = {};
+    }
+
+    function saveStorage() {
+      localStorage.setItem('reta_tracker_data_v1', JSON.stringify(historyData));
+    }
+
+    function switchUser(user) {
+      currentUser = user;
+      document.getElementById('btnSimon').className = 'user-btn ' + (user === 'Simon' ? 'active-simon' : '');
+      document.getElementById('btnMarc').className = 'user-btn ' + (user === 'Marc' ? 'active-marc' : '');
+      
+      const themeColor = user === 'Simon' ? '#3a86ff' : '#8338ec';
+      document.getElementById('doseVal').style.color = themeColor;
+
+      updateUI();
+    }
+
+    function shiftWeek(weeks) {
+      selectedSunday.setDate(selectedSunday.getDate() + (weeks * 7));
+      updateUI();
+    }
+
+    function getRecordForCurrentSunday() {
+      const key = formatDateKey(selectedSunday);
+      return historyData[currentUser][key] || null;
+    }
+
+    function updateUI() {
+      const dateKey = formatDateKey(selectedSunday);
+      const todaySundayKey = formatDateKey(getSundayDate(new Date()));
+      
+      document.getElementById('sundayDisplay').innerText = formatDateDisplay(selectedSunday);
+      const subEl = document.getElementById('sundaySub');
+      if (dateKey === todaySundayKey) {
+        subEl.innerText = 'Current Week';
+        subEl.style.color = 'var(--accent-green)';
+      } else {
+        subEl.innerText = dateKey;
+        subEl.style.color = 'var(--text-secondary)';
+      }
+
+      const record = getRecordForCurrentSunday();
+      let doseVal = 2.0;
+      let isInjected = false;
+
+      if (record) {
+        doseVal = record.dose;
+        isInjected = record.injected;
+      }
+
+      document.getElementById('doseVal').innerText = doseVal.toFixed(1);
+      document.getElementById('doseSlider').value = doseVal;
+
+      const btn = document.getElementById('injectBtn');
+      const icon = document.getElementById('injectIcon');
+      const text = document.getElementById('injectText');
+
+      if (isInjected) {
+        btn.className = 'inject-btn completed';
+        icon.innerText = '✓';
+        text.innerText = 'Injected Successfully';
+      } else {
+        btn.className = 'inject-btn pending';
+        icon.innerText = '⚪';
+        text.innerText = 'Mark as Injected';
+      }
+
+      document.getElementById('historyLabel').innerText = `${currentUser}'s History`;
+      renderHistory();
+    }
+
+    function adjustDose(delta) {
+      let currentVal = parseFloat(document.getElementById('doseSlider').value);
+      let newVal = Math.min(3.0, Math.max(1.0, currentVal + delta));
+      newVal = Math.round(newVal * 10) / 10;
+      
+      document.getElementById('doseSlider').value = newVal;
+      onSliderChange(newVal);
+    }
+
+    function onSliderChange(val) {
+      const dose = parseFloat(val);
+      document.getElementById('doseVal').innerText = dose.toFixed(1);
+      saveCurrentState(dose, getRecordForCurrentSunday()?.injected || false);
+    }
+
+    function toggleInjection() {
+      const record = getRecordForCurrentSunday();
+      const currentDose = parseFloat(document.getElementById('doseSlider').value);
+      const newInjectedState = !(record?.injected || false);
+
+      saveCurrentState(currentDose, newInjectedState);
+      updateUI();
+    }
+
+    function saveCurrentState(dose, injected) {
+      const dateKey = formatDateKey(selectedSunday);
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      historyData[currentUser][dateKey] = {
+        dose: dose,
+        injected: injected,
+        timestamp: injected ? timeStr : (historyData[currentUser][dateKey]?.timestamp || '')
+      };
+
+      saveStorage();
+    }
+
+    function renderHistory() {
+      const historyEl = document.getElementById('historyList');
+      historyEl.innerHTML = '';
+
+      const userRecords = historyData[currentUser] || {};
+      const sortedKeys = Object.keys(userRecords).sort().reverse();
+
+      if (sortedKeys.length === 0) {
+        historyEl.innerHTML = '<div class="empty-state">No recorded injections yet for ' + currentUser + '.</div>';
+        return;
+      }
+
+      sortedKeys.forEach(key => {
+        const item = userRecords[key];
+        const [y, m, d] = key.split('-');
+        const displayDate = new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        row.innerHTML = `
+          <div>
+            <div class="history-date">${displayDate}</div>
+            <div class="history-time">${item.injected ? ('Injected at ' + item.timestamp) : 'Pending entry'}</div>
+          </div>
+          <div class="history-dose-badge">
+            <div class="history-dose">${item.dose.toFixed(1)} mg</div>
+            <span class="status-pill ${item.injected ? 'done' : 'pending'}">
+              ${item.injected ? '✓ Injected' : 'Pending'}
+            </span>
+          </div>
+        `;
+        historyEl.appendChild(row);
+      });
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
