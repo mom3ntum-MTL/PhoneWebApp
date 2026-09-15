@@ -383,6 +383,12 @@
       font-weight: 600;
     }
 
+    .chart-axis-label.highlighted-date {
+      fill: var(--text-primary);
+      font-weight: 900;
+      font-size: 11px;
+    }
+
     .chart-line {
       fill: none;
       stroke: var(--theme-primary);
@@ -402,7 +408,7 @@
       stroke-width: 2.5;
       r: 6;
       cursor: pointer;
-      transition: fill 0.3s ease;
+      transition: fill 0.3s ease, r 0.2s ease, stroke-width 0.2s ease;
     }
 
     .chart-point.pending-point {
@@ -413,13 +419,21 @@
       cursor: pointer;
     }
 
+    .chart-point.selected-node,
+    .serum-point.selected-node {
+      r: 9 !important;
+      stroke: #0f172a !important;
+      stroke-width: 3.5 !important;
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.35));
+    }
+
     .chart-point:hover, .serum-point:hover {
       r: 8;
     }
 
     .serum-point {
       cursor: pointer;
-      transition: r 0.2s ease;
+      transition: r 0.2s ease, stroke-width 0.2s ease;
     }
 
     .empty-chart-msg {
@@ -543,15 +557,26 @@
     .graph-tooltip-banner {
       background: var(--bg-input);
       border-radius: 10px;
-      padding: 6px 10px;
-      font-size: 0.75rem;
+      padding: 8px 12px;
+      font-size: 0.78rem;
       font-weight: 700;
-      color: var(--theme-primary);
+      color: var(--text-primary);
       margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border: 1px solid var(--border-color);
+    }
+
+    .banner-date {
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .banner-val {
+      color: var(--theme-primary);
+      font-weight: 900;
+      font-size: 0.88rem;
     }
 
     /* Modal Overlay for Interactive Calendar */
@@ -829,9 +854,10 @@
       </div>
     </div>
 
+    <!-- Active Click Value Banner for Dosage History -->
     <div id="doseBanner" class="graph-tooltip-banner" style="display: none;">
-      <span id="doseBannerText">Tap a point to view details</span>
-      <span id="doseBannerVal">--</span>
+      <span id="doseBannerDate" class="banner-date">--</span>
+      <span id="doseBannerVal" class="banner-val">--</span>
     </div>
 
     <div id="doseChartWrapper" class="chart-container"></div>
@@ -851,10 +877,10 @@
       </div>
     </div>
 
-    <!-- Active Serum Interactive Readout Banner -->
+    <!-- Active Click Value Banner for Serum Load -->
     <div id="serumBanner" class="graph-tooltip-banner" style="display: none;">
-      <span id="serumBannerText">Tap any point to inspect serum load</span>
-      <span id="serumBannerVal">-- mg</span>
+      <span id="serumBannerDate" class="banner-date">--</span>
+      <span id="serumBannerVal" class="banner-val">--</span>
     </div>
 
     <div id="serumChartWrapper" class="chart-container"></div>
@@ -919,6 +945,10 @@
     let suggestedMaintainDose = 2.0;
     let suggestedIncreaseDose = 2.5;
 
+    // Track active clicked nodes for visual highlighting
+    let activeClickedDoseKey = null;
+    let activeClickedSerumKey = null;
+
     function formatDateKey(dateObj) {
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -976,6 +1006,11 @@
       currentUser = userName;
       historyData = allUserData[currentUser] || {};
       
+      activeClickedDoseKey = null;
+      activeClickedSerumKey = null;
+      document.getElementById('doseBanner').style.display = 'none';
+      document.getElementById('serumBanner').style.display = 'none';
+
       saveStorage();
       updateUserTheme();
       updateUI();
@@ -1034,14 +1069,12 @@
 
       document.getElementById('currentActiveLoadBadge').innerText = `Active: ${currentSerum.toFixed(2)} mg`;
 
-      // Find the most recent injected dose
       const injectedKeys = Object.keys(historyData).filter(k => historyData[k] && historyData[k].injected).sort();
       let lastDose = 2.0;
       if (injectedKeys.length > 0) {
         lastDose = historyData[injectedKeys[injectedKeys.length - 1]].dose;
       }
 
-      // To maintain steady-state serum levels:
       suggestedMaintainDose = Math.round(lastDose * 10) / 10;
       suggestedIncreaseDose = Math.min(6.0, Math.round((lastDose * 1.25) * 10) / 10);
 
@@ -1348,16 +1381,19 @@
       points.forEach((p, idx) => {
         const [y, m, d] = p.key.split('-');
         const shortDate = `${parseInt(m)}/${parseInt(d)}`;
-        const showLabel = points.length <= 8 || idx === 0 || idx === points.length - 1 || idx % stepLabel === 0;
+        const isSelected = (activeClickedDoseKey === p.key);
+        const showLabel = points.length <= 8 || idx === 0 || idx === points.length - 1 || idx % stepLabel === 0 || isSelected;
 
         if (showLabel) {
-          svgHtml += `<text x="${p.x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${shortDate}</text>`;
+          svgHtml += `<text x="${p.x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label ${isSelected ? 'highlighted-date' : ''}">${shortDate}</text>`;
         }
 
         const pointFill = p.item.injected ? activePointColor : '#cbd5e1';
+        let pointClasses = p.item.injected ? 'chart-point' : 'chart-point pending-point';
+        if (isSelected) pointClasses += ' selected-node';
 
         svgHtml += `
-          <circle cx="${p.x}" cy="${p.y}" fill="${pointFill}" class="${p.item.injected ? 'chart-point' : 'chart-point pending-point'}" onclick="onDosePointClicked('${p.key}', ${p.item.dose}, ${p.item.injected})">
+          <circle cx="${p.x}" cy="${p.y}" fill="${pointFill}" class="${pointClasses}" onclick="onDosePointClicked('${p.key}', ${p.item.dose}, ${p.item.injected})">
             <title>${p.key}: ${p.item.dose.toFixed(1)} mg</title>
           </circle>
         `;
@@ -1368,10 +1404,16 @@
     }
 
     function onDosePointClicked(dateKey, dose, injected) {
+      activeClickedDoseKey = dateKey;
       const banner = document.getElementById('doseBanner');
       banner.style.display = 'flex';
-      document.getElementById('doseBannerText').innerText = `📅 ${dateKey} (${injected ? 'Injected' : 'Pending'})`;
+      
+      const parts = dateKey.split('-');
+      const dispDate = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      
+      document.getElementById('doseBannerDate').innerHTML = `📅 <strong>${dispDate}</strong> (${injected ? 'Injected' : 'Pending'})`;
       document.getElementById('doseBannerVal').innerText = `${dose.toFixed(1)} mg`;
+      
       onPointClicked(dateKey);
     }
 
@@ -1479,21 +1521,25 @@
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
+        const isSelected = (activeClickedSerumKey === p.key);
 
-        const showLabel = dailyPoints.length <= 8 || idx === 0 || idx === dailyPoints.length - 1 || idx % stepLabel === 0;
+        const showLabel = dailyPoints.length <= 8 || idx === 0 || idx === dailyPoints.length - 1 || idx % stepLabel === 0 || isSelected;
 
         if (showLabel) {
           const m = p.date.getMonth() + 1;
           const d = p.date.getDate();
-          svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${m}/${d}</text>`;
+          svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label ${isSelected ? 'highlighted-date' : ''}">${m}/${d}</text>`;
         }
 
         const isInj = historyData[p.key]?.injected;
         const isLatest = idx === dailyPoints.length - 1;
 
-        if (isInj || isLatest) {
+        if (isInj || isLatest || isSelected) {
+          let nodeClasses = 'serum-point';
+          if (isSelected) nodeClasses += ' selected-node';
+
           svgHtml += `
-            <circle cx="${x}" cy="${y}" r="${isLatest ? '6' : '5'}" fill="${isLatest ? '#ffffff' : pointColor}" stroke="${strokeColor}" stroke-width="2.5" class="serum-point" onclick="onSerumPointClicked('${p.key}', ${p.serum})">
+            <circle cx="${x}" cy="${y}" r="${isLatest ? '6' : '5'}" fill="${isLatest ? '#ffffff' : pointColor}" stroke="${strokeColor}" stroke-width="2.5" class="${nodeClasses}" onclick="onSerumPointClicked('${p.key}', ${p.serum})">
               <title>${p.key}: ${p.serum.toFixed(2)} mg active serum</title>
             </circle>
           `;
@@ -1505,10 +1551,16 @@
     }
 
     function onSerumPointClicked(dateKey, serumVal) {
+      activeClickedSerumKey = dateKey;
       const banner = document.getElementById('serumBanner');
       banner.style.display = 'flex';
-      document.getElementById('serumBannerText').innerText = `📅 ${dateKey} Active Load:`;
+
+      const parts = dateKey.split('-');
+      const dispDate = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      document.getElementById('serumBannerDate').innerHTML = `📅 <strong>${dispDate}</strong> Active Load:`;
       document.getElementById('serumBannerVal').innerText = `${serumVal.toFixed(2)} mg`;
+
       onPointClicked(dateKey);
     }
 
