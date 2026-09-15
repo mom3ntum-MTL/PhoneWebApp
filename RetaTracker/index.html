@@ -75,7 +75,6 @@
       transition: all 0.3s ease;
     }
 
-    /* Distinct User Profile Toggle Switch */
     .user-toggle-container {
       display: flex;
       background: var(--bg-card);
@@ -101,14 +100,12 @@
       gap: 6px;
     }
 
-    /* Simon Specific Active Button Style */
     .user-toggle-btn.simon-btn.active {
       background: linear-gradient(135deg, #3a86ff, #00f5d4);
       color: #ffffff;
       box-shadow: 0 3px 12px rgba(58, 134, 255, 0.4);
     }
 
-    /* Marc Specific Active Button Style */
     .user-toggle-btn.marc-btn.active {
       background: linear-gradient(135deg, #8338ec, #ff007f);
       color: #ffffff;
@@ -141,7 +138,6 @@
       align-items: center;
     }
 
-    /* Date Bar & Picker Trigger */
     .date-row {
       display: flex;
       justify-content: space-between;
@@ -293,7 +289,6 @@
       font-weight: 600;
     }
 
-    /* Injection Toggle Button */
     .inject-btn {
       width: 100%;
       padding: 20px;
@@ -365,7 +360,7 @@
     .chart-container {
       position: relative;
       width: 100%;
-      height: 200px;
+      height: 205px;
       margin-top: 10px;
       overflow: hidden;
     }
@@ -378,7 +373,7 @@
     }
 
     .chart-grid-line {
-      stroke: rgba(0, 0, 0, 0.05);
+      stroke: rgba(0, 0, 0, 0.06);
       stroke-dasharray: 4;
     }
 
@@ -415,8 +410,16 @@
       stroke: #ffffff;
       stroke-width: 2;
       r: 4.5;
-      filter: none;
       cursor: pointer;
+    }
+
+    .chart-point:hover, .serum-point:hover {
+      r: 8;
+    }
+
+    .serum-point {
+      cursor: pointer;
+      transition: r 0.2s ease;
     }
 
     .empty-chart-msg {
@@ -426,7 +429,6 @@
       font-size: 0.88rem;
     }
 
-    /* Serum Concentration Stats Badge */
     .serum-badge {
       font-size: 0.75rem;
       font-weight: 800;
@@ -435,15 +437,121 @@
       padding: 3px 8px;
       border-radius: 8px;
       border: 1px solid var(--border-color);
+      display: inline-block;
+    }
+
+    /* Target Ranges Box */
+    .target-ranges-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+    }
+
+    .target-ranges-title {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .range-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      padding: 3px 0;
+      color: var(--text-secondary);
+    }
+
+    .range-item strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .range-pill {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .pill-light { background: #e0f2fe; color: #0284c7; }
+    .pill-mod { background: #dcfce7; color: #15803d; }
+    .pill-high { background: #fef3c7; color: #b45309; }
+
+    /* Suggested Next Dose Box */
+    .suggestion-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .suggestion-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .suggestion-card:active {
+      transform: scale(0.97);
+      background: #e2e8f0;
+    }
+
+    .sug-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sug-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--theme-primary);
+      margin: 4px 0 2px 0;
+    }
+
+    .sug-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      line-height: 1.2;
     }
 
     .info-note {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--text-secondary);
       line-height: 1.4;
-      margin-top: 8px;
+      margin-top: 10px;
       padding-top: 8px;
       border-top: 1px dashed var(--border-color);
+    }
+
+    /* Dynamic Value Banner inside Graph */
+    .graph-tooltip-banner {
+      background: var(--bg-input);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--theme-primary);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border-color);
     }
 
     /* Modal Overlay for Interactive Calendar */
@@ -629,7 +737,7 @@
   <header>
     <div class="app-title">MY RETA TRACKER</div>
     
-    <!-- User Switcher with distinct color accents -->
+    <!-- User Switcher -->
     <div class="user-toggle-container">
       <button id="userBtnSimon" class="user-toggle-btn simon-btn active" onclick="switchUser('Simon')">
         <span>👤</span> Simon
@@ -657,7 +765,32 @@
     </div>
   </div>
 
-  <!-- Dosage Slider Card -->
+  <!-- Suggested Next Dose Card -->
+  <div class="card">
+    <div class="card-label">
+      <span>Suggested Next Dose</span>
+      <span id="currentActiveLoadBadge" class="serum-badge">Load: 0.0 mg</span>
+    </div>
+    <div style="font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px;">
+      Tap a suggestion below to load it into the dosage target:
+    </div>
+
+    <div class="suggestion-grid">
+      <div class="suggestion-card" onclick="applySuggestedDose('maintain')">
+        <div class="sug-title">To Maintain Load</div>
+        <div id="sugMaintainVal" class="sug-val">-- mg</div>
+        <div class="sug-desc">Compensates natural decay since last injection.</div>
+      </div>
+
+      <div class="suggestion-card" onclick="applySuggestedDose('increase')">
+        <div class="sug-title">To Increase Load</div>
+        <div id="sugIncreaseVal" class="sug-val">-- mg</div>
+        <div class="sug-desc">Smooth ~25% escalation to build higher level.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Target Dosage Slider Card -->
   <div class="card">
     <div class="card-label">Target Dosage</div>
     <div class="dose-value-container">
@@ -668,11 +801,11 @@
     <div class="dose-controls">
       <button onclick="adjustDose(-0.1)" class="step-btn">−</button>
       <div class="slider-wrapper">
-        <input type="range" id="doseSlider" min="1.0" max="3.0" step="0.1" value="2.0" oninput="onSliderChange(this.value)">
+        <input type="range" id="doseSlider" min="0.5" max="6.0" step="0.1" value="2.0" oninput="onSliderChange(this.value)">
         <div class="range-ticks">
-          <span>1.0 mg</span>
-          <span>2.0 mg</span>
+          <span>0.5 mg</span>
           <span>3.0 mg</span>
+          <span>6.0 mg</span>
         </div>
       </div>
       <button onclick="adjustDose(0.1)" class="step-btn">+</button>
@@ -696,16 +829,19 @@
       </div>
     </div>
 
-    <div id="doseChartWrapper" class="chart-container">
-      <!-- SVG Line Chart rendered dynamically -->
+    <div id="doseBanner" class="graph-tooltip-banner" style="display: none;">
+      <span id="doseBannerText">Tap a point to view details</span>
+      <span id="doseBannerVal">--</span>
     </div>
+
+    <div id="doseChartWrapper" class="chart-container"></div>
   </div>
 
   <!-- Graphic 2: Estimated Cumulative Active Serum Concentration -->
   <div class="card" style="padding-bottom: 14px;">
     <div class="graph-header">
       <div>
-        <div class="card-label" style="margin: 0;">Active Serum Load</div>
+        <div class="card-label" style="margin: 0;">Active Load Serum (mg)</div>
         <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">Retatrutide ~6-day Half-Life Decay</div>
       </div>
       <div class="time-filter">
@@ -715,12 +851,33 @@
       </div>
     </div>
 
-    <div id="serumChartWrapper" class="chart-container">
-      <!-- SVG Serum Curve rendered dynamically -->
+    <!-- Active Serum Interactive Readout Banner -->
+    <div id="serumBanner" class="graph-tooltip-banner" style="display: none;">
+      <span id="serumBannerText">Tap any point to inspect serum load</span>
+      <span id="serumBannerVal">-- mg</span>
+    </div>
+
+    <div id="serumChartWrapper" class="chart-container"></div>
+
+    <!-- Target Range Reference Guide -->
+    <div class="target-ranges-box">
+      <div class="target-ranges-title">🎯 Steady-State Target Serum Ranges</div>
+      <div class="range-item">
+        <span>Light / Maintenance:</span>
+        <span class="range-pill pill-light">1.0 – 2.5 mg</span>
+      </div>
+      <div class="range-item">
+        <span>Moderate Weight Loss:</span>
+        <span class="range-pill pill-mod">2.5 – 5.0 mg</span>
+      </div>
+      <div class="range-item">
+        <span>High Weight Loss / Escalation:</span>
+        <span class="range-pill pill-high">5.0 – 8.0+ mg</span>
+      </div>
     </div>
 
     <div class="info-note">
-      💡 <strong>Pharmacokinetics note:</strong> Active serum level is estimated in effective mg based on the ~6.0 day (144 hr) elimination half-life of Retatrutide. Age/weight are not required to calculate relative dose accumulation.
+      💡 <strong>Pharmacokinetics note:</strong> Active serum level is estimated in effective cumulative mg based on the ~6.0-day (144 hr) elimination half-life of Retatrutide.
     </div>
   </div>
 
@@ -737,9 +894,7 @@
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
       </div>
 
-      <div id="calGrid" class="cal-grid">
-        <!-- Day cells populated dynamically -->
-      </div>
+      <div id="calGrid" class="cal-grid"></div>
 
       <div class="cal-actions">
         <button class="cal-today-btn" onclick="selectTodayInCalendar()">Jump to Today</button>
@@ -758,8 +913,11 @@
     };
     let historyData = {};
 
-    let doseDaysFilter = 30;  // 7, 30, 90
-    let serumDaysFilter = 30; // 7, 30, 90
+    let doseDaysFilter = 30;
+    let serumDaysFilter = 30;
+
+    let suggestedMaintainDose = 2.0;
+    let suggestedIncreaseDose = 2.5;
 
     function formatDateKey(dateObj) {
       const y = dateObj.getFullYear();
@@ -793,7 +951,6 @@
           allUserData = { Simon: {}, Marc: {} };
         }
       } else {
-        // Migration from previous key if present
         const prevData = localStorage.getItem('reta_users_data_v2');
         if (prevData) {
           try { allUserData = JSON.parse(prevData); } catch(e) {}
@@ -853,6 +1010,51 @@
       updateUI();
     }
 
+    function calculateSerumLoadOnDate(targetDate) {
+      const halfLife = 6.0;
+      let activeSerumMg = 0;
+      const injectedKeys = Object.keys(historyData).filter(k => historyData[k] && historyData[k].injected);
+
+      injectedKeys.forEach(injKey => {
+        const parts = injKey.split('-');
+        const injDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        const diffDays = (targetDate - injDate) / (1000 * 60 * 60 * 24);
+
+        if (diffDays >= 0) {
+          const dose = historyData[injKey].dose;
+          activeSerumMg += dose * Math.pow(0.5, diffDays / halfLife);
+        }
+      });
+      return activeSerumMg;
+    }
+
+    function computeSuggestions() {
+      const today = new Date();
+      const currentSerum = calculateSerumLoadOnDate(today);
+
+      document.getElementById('currentActiveLoadBadge').innerText = `Active: ${currentSerum.toFixed(2)} mg`;
+
+      // Find the most recent injected dose
+      const injectedKeys = Object.keys(historyData).filter(k => historyData[k] && historyData[k].injected).sort();
+      let lastDose = 2.0;
+      if (injectedKeys.length > 0) {
+        lastDose = historyData[injectedKeys[injectedKeys.length - 1]].dose;
+      }
+
+      // To maintain steady-state serum levels:
+      suggestedMaintainDose = Math.round(lastDose * 10) / 10;
+      suggestedIncreaseDose = Math.min(6.0, Math.round((lastDose * 1.25) * 10) / 10);
+
+      document.getElementById('sugMaintainVal').innerText = `${suggestedMaintainDose.toFixed(1)} mg`;
+      document.getElementById('sugIncreaseVal').innerText = `${suggestedIncreaseDose.toFixed(1)} mg`;
+    }
+
+    function applySuggestedDose(type) {
+      const dose = type === 'maintain' ? suggestedMaintainDose : suggestedIncreaseDose;
+      document.getElementById('doseSlider').value = dose;
+      onSliderChange(dose);
+    }
+
     function updateUI() {
       const dateKey = formatDateKey(selectedDate);
       const todayKey = formatDateKey(new Date());
@@ -894,13 +1096,14 @@
         text.innerText = 'Mark as Injected';
       }
 
+      computeSuggestions();
       renderDoseChart();
       renderSerumChart();
     }
 
     function adjustDose(delta) {
       let currentVal = parseFloat(document.getElementById('doseSlider').value);
-      let newVal = Math.min(3.0, Math.max(1.0, currentVal + delta));
+      let newVal = Math.min(6.0, Math.max(0.5, currentVal + delta));
       newVal = Math.round(newVal * 10) / 10;
 
       document.getElementById('doseSlider').value = newVal;
@@ -934,6 +1137,7 @@
       };
 
       saveStorage();
+      computeSuggestions();
       renderDoseChart();
       renderSerumChart();
     }
@@ -983,7 +1187,6 @@
       const selectedKey = formatDateKey(selectedDate);
       const todayKey = formatDateKey(new Date());
 
-      // Prev month filler
       for (let i = firstDayIdx - 1; i >= 0; i--) {
         const d = prevMonthDays - i;
         const prevDate = new Date(year, month - 1, d);
@@ -999,7 +1202,6 @@
         calGrid.appendChild(cell);
       }
 
-      // Current month cells
       for (let d = 1; d <= daysInMonth; d++) {
         const currentDate = new Date(year, month, d);
         const cellKey = formatDateKey(currentDate);
@@ -1011,7 +1213,6 @@
         cell.className = classes;
         cell.innerText = d;
 
-        // Add history indicator dot
         if (historyData[cellKey]) {
           const dot = document.createElement('div');
           dot.className = 'cal-dot ' + (historyData[cellKey].injected ? 'injected' : 'pending');
@@ -1027,7 +1228,6 @@
         calGrid.appendChild(cell);
       }
 
-      // Next month filler
       const totalCells = firstDayIdx + daysInMonth;
       const nextMonthFiller = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
       for (let d = 1; d <= nextMonthFiller; d++) {
@@ -1072,7 +1272,7 @@
         return;
       }
 
-      const paddingLeft = 35;
+      const paddingLeft = 45;
       const paddingRight = 15;
       const paddingTop = 15;
       const paddingBottom = 28;
@@ -1083,8 +1283,8 @@
       const chartW = width - paddingLeft - paddingRight;
       const chartH = height - paddingTop - paddingBottom;
 
-      const minDose = 1.0;
-      const maxDose = 3.0;
+      const minDose = 0.5;
+      const maxDose = Math.max(3.0, ...filteredKeys.map(k => historyData[k].dose));
 
       function getX(index, total) {
         if (total === 1) return paddingLeft + chartW / 2;
@@ -1099,7 +1299,6 @@
 
       let points = [];
       let pathD = '';
-      let areaD = '';
 
       filteredKeys.forEach((key, idx) => {
         const item = historyData[key];
@@ -1107,41 +1306,40 @@
         const y = getY(item.dose);
         points.push({ x, y, key, item });
 
-        if (idx === 0) {
-          pathD += `M ${x} ${y}`;
-        } else {
-          pathD += ` L ${x} ${y}`;
-        }
+        if (idx === 0) pathD += `M ${x} ${y}`;
+        else pathD += ` L ${x} ${y}`;
       });
 
       const firstX = points[0].x;
       const lastX = points[points.length - 1].x;
       const zeroY = paddingTop + chartH;
-      areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
+      const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
 
       const activePointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
       const activeLineColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
+
+      const step = (maxDose - minDose) / 3;
+      const ticks = [minDose, minDose + step, minDose + (2 * step), maxDose];
 
       let svgHtml = `
         <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="${activeLineColor}" stop-opacity="0.5"/>
+              <stop offset="0%" stop-color="${activeLineColor}" stop-opacity="0.45"/>
               <stop offset="100%" stop-color="${activeLineColor}" stop-opacity="0.0"/>
             </linearGradient>
           </defs>
+      `;
 
-          <!-- Y Axis Grid -->
-          <line x1="${paddingLeft}" y1="${getY(1.0)}" x2="${width - paddingRight}" y2="${getY(1.0)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(1.0) + 3}" text-anchor="end" class="chart-axis-label">1.0</text>
+      ticks.forEach(val => {
+        const y = getY(val);
+        svgHtml += `
+          <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${val.toFixed(1)} mg</text>
+        `;
+      });
 
-          <line x1="${paddingLeft}" y1="${getY(2.0)}" x2="${width - paddingRight}" y2="${getY(2.0)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(2.0) + 3}" text-anchor="end" class="chart-axis-label">2.0</text>
-
-          <line x1="${paddingLeft}" y1="${getY(3.0)}" x2="${width - paddingRight}" y2="${getY(3.0)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(3.0) + 3}" text-anchor="end" class="chart-axis-label">3.0</text>
-
-          <!-- Area & Line -->
+      svgHtml += `
           <path d="${areaD}" class="chart-area" />
           <path d="${pathD}" class="chart-line" />
       `;
@@ -1159,14 +1357,22 @@
         const pointFill = p.item.injected ? activePointColor : '#cbd5e1';
 
         svgHtml += `
-          <circle cx="${p.x}" cy="${p.y}" fill="${pointFill}" class="${p.item.injected ? 'chart-point' : 'chart-point pending-point'}" onclick="onPointClicked('${p.key}')">
-            <title>${p.key}: ${p.item.dose.toFixed(1)} mg (${p.item.injected ? 'Injected' : 'Pending'})</title>
+          <circle cx="${p.x}" cy="${p.y}" fill="${pointFill}" class="${p.item.injected ? 'chart-point' : 'chart-point pending-point'}" onclick="onDosePointClicked('${p.key}', ${p.item.dose}, ${p.item.injected})">
+            <title>${p.key}: ${p.item.dose.toFixed(1)} mg</title>
           </circle>
         `;
       });
 
       svgHtml += `</svg>`;
       chartWrapper.innerHTML = svgHtml;
+    }
+
+    function onDosePointClicked(dateKey, dose, injected) {
+      const banner = document.getElementById('doseBanner');
+      banner.style.display = 'flex';
+      document.getElementById('doseBannerText').innerText = `📅 ${dateKey} (${injected ? 'Injected' : 'Pending'})`;
+      document.getElementById('doseBannerVal').innerText = `${dose.toFixed(1)} mg`;
+      onPointClicked(dateKey);
     }
 
     function setSerumFilter(days) {
@@ -1180,7 +1386,6 @@
     function renderSerumChart() {
       const chartWrapper = document.getElementById('serumChartWrapper');
       const allKeys = Object.keys(historyData).sort();
-
       const injectedKeys = allKeys.filter(k => historyData[k] && historyData[k].injected);
 
       if (injectedKeys.length === 0) {
@@ -1192,24 +1397,11 @@
       const today = new Date();
       const dailyPoints = [];
 
-      const halfLife = 6.0; // Retatrutide elimination half-life in days
-
       for (let i = totalDays - 1; i >= 0; i--) {
         const evalDate = new Date(today);
         evalDate.setDate(evalDate.getDate() - i);
         const evalKey = formatDateKey(evalDate);
-
-        let activeSerumMg = 0;
-
-        injectedKeys.forEach(injKey => {
-          const injDate = new Date(injKey);
-          const diffDays = (evalDate - injDate) / (1000 * 60 * 60 * 24);
-
-          if (diffDays >= 0) {
-            const dose = historyData[injKey].dose;
-            activeSerumMg += dose * Math.pow(0.5, diffDays / halfLife);
-          }
-        });
+        const activeSerumMg = calculateSerumLoadOnDate(evalDate);
 
         dailyPoints.push({
           date: evalDate,
@@ -1218,7 +1410,7 @@
         });
       }
 
-      const paddingLeft = 35;
+      const paddingLeft = 45;
       const paddingRight = 15;
       const paddingTop = 15;
       const paddingBottom = 28;
@@ -1229,8 +1421,8 @@
       const chartW = width - paddingLeft - paddingRight;
       const chartH = height - paddingTop - paddingBottom;
 
-      const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1.0);
-      const maxSerumAxis = Math.ceil(maxSerumCalculated * 1.25 * 10) / 10;
+      const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1.5);
+      const maxSerumAxis = Math.ceil(maxSerumCalculated * 1.2 * 10) / 10;
 
       function getX(idx, total) {
         if (total === 1) return paddingLeft + chartW / 2;
@@ -1258,6 +1450,8 @@
       const strokeColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
       const pointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
 
+      const serumScaleSteps = [0, maxSerumAxis * 0.33, maxSerumAxis * 0.66, maxSerumAxis];
+
       let svgHtml = `
         <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
           <defs>
@@ -1266,17 +1460,17 @@
               <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"/>
             </linearGradient>
           </defs>
+      `;
 
-          <!-- Grid lines -->
-          <line x1="${paddingLeft}" y1="${getY(maxSerumAxis)}" x2="${width - paddingRight}" y2="${getY(maxSerumAxis)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(maxSerumAxis) + 3}" text-anchor="end" class="chart-axis-label">${maxSerumAxis.toFixed(1)}</text>
+      serumScaleSteps.forEach(val => {
+        const y = getY(val);
+        svgHtml += `
+          <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />
+          <text x="${paddingLeft - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${val.toFixed(1)} mg</text>
+        `;
+      });
 
-          <line x1="${paddingLeft}" y1="${getY(maxSerumAxis / 2)}" x2="${width - paddingRight}" y2="${getY(maxSerumAxis / 2)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(maxSerumAxis / 2) + 3}" text-anchor="end" class="chart-axis-label">${(maxSerumAxis / 2).toFixed(1)}</text>
-
-          <line x1="${paddingLeft}" y1="${getY(0)}" x2="${width - paddingRight}" y2="${getY(0)}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${getY(0) + 3}" text-anchor="end" class="chart-axis-label">0.0</text>
-
+      svgHtml += `
           <path d="${areaD}" fill="url(#serumGradient)" />
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
@@ -1294,11 +1488,13 @@
           svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${m}/${d}</text>`;
         }
 
-        // Draw point on injection days or latest point
-        if (historyData[p.key]?.injected || idx === dailyPoints.length - 1) {
+        const isInj = historyData[p.key]?.injected;
+        const isLatest = idx === dailyPoints.length - 1;
+
+        if (isInj || isLatest) {
           svgHtml += `
-            <circle cx="${x}" cy="${y}" r="5" fill="${pointColor}" stroke="#ffffff" stroke-width="2" onclick="onPointClicked('${p.key}')">
-              <title>${p.key}: ~${p.serum.toFixed(2)} mg active serum</title>
+            <circle cx="${x}" cy="${y}" r="${isLatest ? '6' : '5'}" fill="${isLatest ? '#ffffff' : pointColor}" stroke="${strokeColor}" stroke-width="2.5" class="serum-point" onclick="onSerumPointClicked('${p.key}', ${p.serum})">
+              <title>${p.key}: ${p.serum.toFixed(2)} mg active serum</title>
             </circle>
           `;
         }
@@ -1306,6 +1502,14 @@
 
       svgHtml += `</svg>`;
       chartWrapper.innerHTML = svgHtml;
+    }
+
+    function onSerumPointClicked(dateKey, serumVal) {
+      const banner = document.getElementById('serumBanner');
+      banner.style.display = 'flex';
+      document.getElementById('serumBannerText').innerText = `📅 ${dateKey} Active Load:`;
+      document.getElementById('serumBannerVal').innerText = `${serumVal.toFixed(2)} mg`;
+      onPointClicked(dateKey);
     }
 
     function onPointClicked(dateKey) {
