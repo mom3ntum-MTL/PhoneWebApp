@@ -186,13 +186,13 @@
     .dose-tab {
       border: none;
       background: transparent;
-      padding: 4px 10px;
+      padding: 6px 12px;
       border-radius: 9px;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
 
     .card.advil .dose-tab.active {
@@ -286,7 +286,7 @@
       border: 1px solid #ffcdd2;
     }
 
-    /* Separate Line Wait/Ready Notification (Single Line, Fits Smart Phone) */
+    /* Separate Single-Line Wait/Ready Notification */
     .wait-notification-line {
       font-size: 0.72rem;
       font-weight: 700;
@@ -593,6 +593,10 @@
       text-align: center;
     }
 
+    .modal-chip:active {
+      background: #e9e0de;
+    }
+
     .modal-actions {
       display: flex;
       gap: 8px;
@@ -761,7 +765,7 @@
       <div class="modal-group">
         <label class="modal-label">Dosage</label>
         <div class="dose-selector-tabs" id="modalDoseTabs" style="width: 100%; display: flex;">
-          <!-- Dynamically populated -->
+          <!-- Dynamically populated via updateModalTabs() -->
         </div>
       </div>
 
@@ -808,9 +812,9 @@
 
     let doseHistory = [];
 
-    // Helper: calculate appropriate safety interval based on dose amount
-    // Rule: Half dose (200mg Advil / 500mg Tylenol) = 3 hours (180 mins)
-    //       Full dose (400mg Advil / 1000mg Tylenol) = 6 hours (360 mins)
+    // Safety interval based on dose amount:
+    // Half dose (200mg Advil / 500mg Tylenol) = 3 hours (180 mins)
+    // Full dose (400mg Advil / 1000mg Tylenol) = 6 hours (360 mins)
     function getIntervalMinutes(med, doseMg) {
       if (med === 'advil') {
         return (doseMg <= 200) ? 180 : 360;
@@ -824,7 +828,7 @@
       updateDynamicGreeting();
       updateCenterDate();
       renderUI();
-      setInterval(renderUI, 30000); // refresh every 30s for countdowns
+      setInterval(renderUI, 30000);
     }
 
     function loadHistory() {
@@ -849,7 +853,7 @@
       const subEl = document.getElementById('greetingSub');
 
       if (hour >= 5 && hour < 12) {
-        titleEl.innerText = "Good morning, Marc ☀️️";
+        titleEl.innerText = "Good morning, Marc ☀️";
         subEl.innerText = "Wishing you a calm and comfortable start.";
       } else if (hour >= 12 && hour < 17) {
         titleEl.innerText = "Good afternoon, Marc 🌿";
@@ -915,7 +919,6 @@
         timestamp: timestamp
       });
 
-      // Sort chronological descending
       doseHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       saveHistory();
       renderUI();
@@ -948,7 +951,6 @@
       const cautionLimit = LIMITS[med].caution;
       const targetDose = selectedDoses[med];
 
-      // Used text & Progress fill
       const usedTextEl = document.getElementById(isAdvil ? 'advilUsedText' : 'tylenolUsedText');
       const progressFill = document.getElementById(isAdvil ? 'advilProgressFill' : 'tylenolProgressFill');
       const warningBadge = document.getElementById(isAdvil ? 'advilWarningBadge' : 'tylenolWarningBadge');
@@ -957,7 +959,6 @@
       const pct = Math.min(100, Math.round((todayTotal / hardLimit) * 100));
       progressFill.style.width = `${pct}%`;
 
-      // Warning states
       progressFill.classList.remove('warning', 'maxed');
       warningBadge.className = 'dose-warning-badge';
       warningBadge.style.display = 'none';
@@ -974,7 +975,6 @@
         warningBadge.style.display = 'block';
       }
 
-      // Interval & Notification line calculation based on last dose
       const last = getLastDose(med);
       const waitBanner = document.getElementById(isAdvil ? 'advilWaitNotification' : 'tylenolWaitNotification');
       const waitText = document.getElementById(isAdvil ? 'advilWaitText' : 'tylenolWaitText');
@@ -997,7 +997,6 @@
         }
       }
 
-      // Check if user is blocked by hard limit
       const isBlockedByLimit = (todayTotal + targetDose) > hardLimit;
 
       if (isBlockedByLimit) {
@@ -1015,7 +1014,6 @@
 
         waitBanner.className = 'wait-notification-line waiting';
         
-        // Single-line compact notification
         const hrs = Math.floor(remainingMin / 60);
         const mins = remainingMin % 60;
         const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
@@ -1064,28 +1062,42 @@
       }).join('');
     }
 
-    /* Past Modal Logic */
+    /* Past Modal Logic & Direct Tab Re-rendering */
+    function updateModalTabs() {
+      const tabsWrap = document.getElementById('modalDoseTabs');
+      const isAdvil = (pastModalMed === 'advil');
+      const options = isAdvil ? [200, 400] : [500, 1000];
+      const activeColor = isAdvil ? 'var(--advil-primary)' : 'var(--tylenol-primary)';
+
+      tabsWrap.innerHTML = options.map(d => {
+        const isActive = (modalSelectedDose === d);
+        const activeStyles = isActive 
+          ? `background: ${activeColor}; color: #ffffff; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.18);` 
+          : `background: transparent; color: var(--text-muted); font-weight: 700;`;
+
+        return `
+          <button type="button" class="dose-tab" style="flex:1; ${activeStyles}" onclick="setModalDose(${d})">
+            ${d} mg
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setModalDose(dose) {
+      modalSelectedDose = Number(dose);
+      updateModalTabs();
+    }
+
     function openPastModal(med) {
       pastModalMed = med;
-      modalSelectedDose = selectedDoses[med];
+      // Pre-select whatever dose is currently picked on the main card
+      modalSelectedDose = Number(selectedDoses[med]);
 
-      const isAdvil = med === 'advil';
+      const isAdvil = (med === 'advil');
       document.getElementById('modalTitle').innerText = `Log Past ${isAdvil ? 'Advil' : 'Tylenol'}`;
       document.getElementById('modalSaveBtn').style.background = isAdvil ? 'var(--advil-primary)' : 'var(--tylenol-primary)';
 
-      // Render modal dosage tabs
-      const tabsWrap = document.getElementById('modalDoseTabs');
-      if (isAdvil) {
-        tabsWrap.innerHTML = `
-          <button class="dose-tab ${modalSelectedDose === 200 ? 'active' : ''}" style="flex:1" onclick="setModalDose(200)">200 mg</button>
-          <button class="dose-tab ${modalSelectedDose === 400 ? 'active' : ''}" style="flex:1" onclick="setModalDose(400)">400 mg</button>
-        `;
-      } else {
-        tabsWrap.innerHTML = `
-          <button class="dose-tab ${modalSelectedDose === 500 ? 'active' : ''}" style="flex:1" onclick="setModalDose(500)">500 mg</button>
-          <button class="dose-tab ${modalSelectedDose === 1000 ? 'active' : ''}" style="flex:1" onclick="setModalDose(1000)">1000 mg</button>
-        `;
-      }
+      updateModalTabs();
 
       // Default time to current time
       const now = new Date();
@@ -1094,15 +1106,6 @@
       document.getElementById('pastTimeInput').value = `${hh}:${mm}`;
 
       document.getElementById('pastModal').classList.add('active');
-    }
-
-    function setModalDose(dose) {
-      modalSelectedDose = dose;
-      const tabs = document.getElementById('modalDoseTabs').querySelectorAll('.dose-tab');
-      tabs.forEach(t => {
-        if (t.innerText.includes(dose)) t.classList.add('active');
-        else t.classList.remove('active');
-      });
     }
 
     function setPastTimeOffset(minsAgo) {
