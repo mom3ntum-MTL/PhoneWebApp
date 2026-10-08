@@ -9,15 +9,11 @@
 <meta name="apple-mobile-web-app-title" content="my little UNESCO">
 <meta name="theme-color" content="#0f172a">
 
-<!-- App Icons & PWA Standalone Setup -->
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon.png">
-<link rel="manifest" href="manifest.json">
-
 <title>my little UNESCO</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<!-- UNESCO database loaded from companion file -->
+<script src="sites.js"></script>
 <script>
   tailwind.config = { darkMode: 'class' };
 </script>
@@ -41,28 +37,38 @@
   }
   .splash-logo-pulse { animation: splash-pulse 1.8s ease-in-out infinite; }
 
-  /* Map Container & Pan-Zoom Canvas */
+  /* Map Viewport & Pan-Zoom Canvas */
   #mapViewportContainer {
     touch-action: none;
     user-select: none;
     cursor: grab;
   }
-  #mapViewportContainer:active {
-    cursor: grabbing;
-  }
-  .country-vector {
+  #mapViewportContainer:active { cursor: grabbing; }
+
+  /* Country Circle/Oval Vector Styling */
+  .country-node-shape {
     cursor: pointer;
-    transition: fill 0.25s ease, stroke 0.2s ease, stroke-width 0.2s ease;
+    transition: transform 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, fill 0.25s ease;
   }
-  .country-vector:hover {
-    stroke-width: 2.2px !important;
-    filter: drop-shadow(0 2px 5px rgba(16, 185, 129, 0.4));
+  .country-node-shape:hover {
+    stroke-width: 2.4px !important;
+    filter: drop-shadow(0 2px 5px rgba(16, 185, 129, 0.45));
   }
-  .country-vector.selected-country {
+  .country-node-shape.selected-country {
     stroke: #3b82f6 !important;
-    stroke-width: 2.6px !important;
-    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.65));
+    stroke-width: 2.8px !important;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
   }
+
+  .country-node-text {
+    pointer-events: none;
+    user-select: none;
+    font-size: 7.5px;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
@@ -86,7 +92,7 @@
 
   <div class="max-w-md mx-auto min-h-screen flex flex-col safe-top safe-bottom">
 
-    <!-- Header matching Sommelier styling -->
+    <!-- Top Header -->
     <header class="px-5 pt-5 pb-3 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <button onclick="switchTab('map')" title="UNESCO World Map" class="p-2.5 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-500/30 rounded-xl text-emerald-600 dark:text-emerald-500 hover:bg-emerald-200 dark:hover:bg-emerald-900 transition cursor-pointer">
@@ -122,7 +128,7 @@
       </div>
     </header>
 
-    <!-- Global Navigation Tabs (Merged into 3 Clean Tabs: Map, Browse, Stats) -->
+    <!-- Global Navigation Tabs: Map, Browse, Stats -->
     <div class="px-5 pt-1 pb-3">
       <div class="flex p-1 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300/40 dark:border-slate-700/50">
         <button onclick="switchTab('map')" id="tabBtn-map" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -140,20 +146,20 @@
       </div>
     </div>
 
-    <!-- MAIN BODY -->
+    <!-- MAIN APP VIEWS -->
     <main class="flex-1 px-5 pb-8 flex flex-col">
 
       <!-- ========================================== -->
-      <!-- VIEW 0: ZOOMABLE VECTOR WORLD MAP          -->
+      <!-- VIEW 0: REWORKED BUBBLE VECTOR WORLD MAP   -->
       <!-- ========================================== -->
       <section id="view-map" class="space-y-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm space-y-3">
           
-          <!-- Inspector Banner with Open Button directly linked to Browse -->
+          <!-- Inspector Banner with Direct Open Button -->
           <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between min-h-[48px]">
             <div>
               <span id="mapInspectorText" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">
-                Tap any country to inspect
+                Tap any country circle to inspect
               </span>
             </div>
             <button id="mapInspectOpenBtn" onclick="openInspectedCountryInBrowse()" class="hidden px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1 cursor-pointer">
@@ -162,10 +168,10 @@
             </button>
           </div>
 
-          <!-- Interactive Viewport Container with Pinch-to-Zoom & Pan -->
+          <!-- Interactive Viewport Container with Pinch/Pan Zoom -->
           <div id="mapViewportContainer" class="relative w-full aspect-[16/10] bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
             
-            <!-- Floating Zoom Controls Pill -->
+            <!-- Zoom Controls Pill -->
             <div class="absolute top-2.5 right-2.5 z-10 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-md overflow-hidden text-slate-700 dark:text-slate-200">
               <button onclick="zoomMap(1.3)" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-200 dark:border-slate-800" title="Zoom In">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -188,6 +194,7 @@
               </defs>
               <rect id="oceanRect" width="1000" height="500" fill="url(#oceanGrad)"/>
               
+              <!-- Latitude/Longitude Coordinates Lines -->
               <g stroke="#cbd5e1" dark:stroke="#334155" stroke-width="0.5" stroke-dasharray="3,4" opacity="0.35">
                 <line x1="0" y1="250" x2="1000" y2="250" />
                 <line x1="0" y1="125" x2="1000" y2="125" />
@@ -195,71 +202,22 @@
                 <line x1="500" y1="0" x2="500" y2="500" />
               </g>
 
-              <!-- Continental & Island Basemap -->
-              <g fill="#94a3b8" opacity="0.16">
-                <path d="M 60 70 L 110 50 L 160 55 L 240 50 L 290 80 L 260 135 L 295 195 L 245 220 L 180 205 L 125 185 L 75 140 Z M 320 30 L 375 25 L 390 65 L 340 75 Z" />
-                <path d="M 265 260 L 325 255 L 395 305 L 375 385 L 340 435 L 315 485 L 285 450 L 265 340 Z" />
-                <path d="M 450 115 L 530 85 L 610 80 L 890 65 L 940 145 L 895 240 L 840 235 L 755 240 L 730 310 L 685 240 L 590 200 L 485 125 Z" />
-                <path d="M 460 210 L 585 210 L 635 250 L 600 425 L 530 435 L 490 320 L 450 250 Z M 640 370 L 655 375 L 645 425 L 632 410 Z" />
+              <!-- Precise Continental Basemap Outlines -->
+              <g fill="#94a3b8" opacity="0.22" stroke="#64748b" stroke-width="0.4">
+                <!-- North America -->
+                <path d="M 60 70 L 100 50 L 150 48 L 220 52 L 290 80 L 310 95 L 290 145 L 255 185 L 250 215 L 205 270 L 175 235 L 125 185 L 65 140 Z M 325 35 L 380 30 L 390 65 L 340 75 Z" />
+                <!-- South America -->
+                <path d="M 265 260 L 325 255 L 395 305 L 395 375 L 340 435 L 315 485 L 285 450 L 265 340 Z" />
+                <!-- Eurasia -->
+                <path d="M 450 115 L 530 85 L 610 80 L 800 65 L 940 100 L 930 160 L 895 240 L 840 235 L 755 240 L 730 310 L 685 240 L 590 200 L 485 125 Z M 440 110 L 485 105 L 475 145 L 450 145 Z M 870 150 L 905 160 L 890 215 L 865 200 Z" />
+                <!-- Africa -->
+                <path d="M 460 210 L 585 210 L 635 250 L 640 295 L 600 425 L 530 435 L 490 320 L 450 250 Z M 640 370 L 655 375 L 645 425 L 632 410 Z" />
+                <!-- Australia & New Zealand -->
                 <path d="M 795 335 L 910 335 L 905 440 L 810 435 Z M 920 440 L 935 445 L 930 480 L 915 470 Z" />
               </g>
 
-              <!-- Interactive Country Vectors -->
-              <g id="mapCountryGroup">
-                <!-- North America -->
-                <path id="svg-US" data-country="United States" data-code="US" class="country-vector" d="M 125 142 L 285 142 L 295 195 L 250 215 L 180 205 L 125 185 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-CA" data-country="Canada" data-code="CA" class="country-vector" d="M 125 65 L 260 60 L 308 85 L 285 140 L 125 140 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-MX" data-country="Mexico" data-code="MX" class="country-vector" d="M 165 208 L 225 222 L 235 255 L 205 270 L 175 235 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-
-                <!-- South America -->
-                <path id="svg-PE" data-country="Peru" data-code="PE" class="country-vector" d="M 270 295 L 305 295 L 315 345 L 280 340 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-BR" data-country="Brazil" data-code="BR" class="country-vector" d="M 308 285 L 390 310 L 395 375 L 335 410 L 305 345 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-AR" data-country="Argentina" data-code="AR" class="country-vector" d="M 295 365 L 330 365 L 320 460 L 290 460 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-
-                <!-- Europe -->
-                <path id="svg-UK" data-country="United Kingdom" data-code="UK" class="country-vector" d="M 460 115 L 485 110 L 480 140 L 460 142 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-FR" data-country="France" data-code="FR" class="country-vector" d="M 480 143 L 515 143 L 522 175 L 480 180 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-ES" data-country="Spain" data-code="ES" class="country-vector" d="M 455 182 L 495 182 L 490 220 L 450 215 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-PT" data-country="Portugal" data-code="PT" class="country-vector" d="M 445 185 L 454 185 L 452 215 L 442 212 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-DE" data-country="Germany" data-code="DE" class="country-vector" d="M 515 130 L 545 130 L 545 162 L 516 162 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-IT" data-country="Italy" data-code="IT" class="country-vector" d="M 524 165 L 545 168 L 560 215 L 545 225 L 530 188 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-GR" data-country="Greece" data-code="GR" class="country-vector" d="M 565 205 L 590 205 L 585 235 L 568 230 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <circle id="svg-MT" data-country="Malta" data-code="MT" class="country-vector" cx="548" cy="235" r="4.5" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-
-                <!-- Africa & Middle East -->
-                <path id="svg-EG" data-country="Egypt" data-code="EG" class="country-vector" d="M 585 215 L 630 215 L 630 260 L 585 260 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-MA" data-country="Morocco" data-code="MA" class="country-vector" d="M 458 215 L 490 215 L 485 245 L 455 240 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-TR" data-country="Turkey" data-code="TR" class="country-vector" d="M 590 185 L 650 185 L 645 212 L 585 212 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-
-                <!-- Asia & Oceania -->
-                <path id="svg-CN" data-country="China" data-code="CN" class="country-vector" d="M 720 145 L 850 140 L 860 230 L 755 240 L 725 195 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-IN" data-country="India" data-code="IN" class="country-vector" d="M 685 230 L 745 225 L 730 305 L 695 285 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-JP" data-country="Japan" data-code="JP" class="country-vector" d="M 875 160 L 905 165 L 895 215 L 870 205 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-                <path id="svg-AU" data-country="Australia" data-code="AU" class="country-vector" d="M 800 340 L 915 340 L 905 440 L 815 435 Z" fill="#94a3b8" stroke="#ffffff" stroke-width="0.9" />
-              </g>
-
-              <!-- Labels -->
-              <g class="pointer-events-none text-[8.5px] font-black select-none fill-slate-800 dark:fill-white opacity-80">
-                <text x="195" y="180">US</text>
-                <text x="180" y="105">CA</text>
-                <text x="190" y="240">MX</text>
-                <text x="283" y="325">PE</text>
-                <text x="340" y="345">BR</text>
-                <text x="297" y="420">AR</text>
-                <text x="463" y="130">UK</text>
-                <text x="492" y="165">FR</text>
-                <text x="465" y="202">ES</text>
-                <text x="525" y="150">DE</text>
-                <text x="540" y="195">IT</text>
-                <text x="570" y="222">GR</text>
-                <text x="598" y="240">EG</text>
-                <text x="465" y="235">MA</text>
-                <text x="608" y="200">TR</text>
-                <text x="775" y="185">CN</text>
-                <text x="705" y="265">IN</text>
-                <text x="880" y="185">JP</text>
-                <text x="850" y="390">AU</text>
-              </g>
+              <!-- Dynamically Populated Country Circles & Ovals (Only UNESCO countries) -->
+              <g id="mapCountryGroup"></g>
             </svg>
           </div>
 
@@ -281,7 +239,7 @@
 
           <!-- Direct Country Quick Chips -->
           <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1.5">Direct Jump</span>
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1.5">Direct Country Jump</span>
             <div id="mapCountryQuickChips" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
           </div>
 
@@ -289,7 +247,7 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- VIEW 1: UNIFIED BROWSE TAB (MERGED)        -->
+      <!-- VIEW 1: UNIFIED BROWSE TAB                 -->
       <!-- ========================================== -->
       <section id="view-browse" class="hidden space-y-4">
         
@@ -307,7 +265,6 @@
           <div class="relative">
             <select id="browseCountrySelect" onchange="onBrowseCountryChange(this.value)" class="w-full appearance-none px-3.5 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 cursor-pointer pr-10">
               <option value="all">🌍 All Countries (Global Browse)</option>
-              <!-- Populated via JS -->
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -318,7 +275,7 @@
           <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
             <div class="relative flex-1">
               <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-              <input type="text" id="unifiedSearchInput" oninput="renderBrowseView()" placeholder="Filter by site, region, description..." class="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-emerald-400 font-medium">
+              <input type="text" id="unifiedSearchInput" oninput="renderBrowseView()" placeholder="Search Colosseum, Ggantija, Parthenon, region..." class="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-emerald-400 font-medium">
             </div>
             <select id="unifiedStatusFilter" onchange="renderBrowseView()" class="px-2.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold focus:outline-none">
               <option value="all">All Status</option>
@@ -335,19 +292,17 @@
           <span id="browseVisitedCounter" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"></span>
         </div>
 
-        <!-- Rendered Sites Container (Separated by Region Accordions with high-hit toggle capsules) -->
-        <div id="unifiedSitesContainer" class="space-y-3">
-          <!-- Injected dynamically -->
-        </div>
+        <!-- Rendered Sites Container -->
+        <div id="unifiedSitesContainer" class="space-y-3"></div>
 
       </section>
 
       <!-- ========================================== -->
-      <!-- VIEW 2: DUAL STATS & WORLDWIDE BENCHMARK   -->
+      <!-- VIEW 2: STATS & WORLD BENCHMARK            -->
       <!-- ========================================== -->
       <section id="view-stats" class="hidden space-y-4">
         
-        <!-- CARD 1: INCLUDED APP SITES (EXACTLY 600) -->
+        <!-- CARD 1: INCLUDED APP SITES -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
           <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
@@ -370,7 +325,7 @@
               <span class="text-[10px] font-bold text-slate-400 uppercase">Wishlist</span>
             </div>
             <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-              <span class="block text-base font-black text-slate-700 dark:text-slate-300">600</span>
+              <span id="statsTotalCount" class="block text-base font-black text-slate-700 dark:text-slate-300">0</span>
               <span class="text-[10px] font-bold text-slate-400 uppercase">Included Sites</span>
             </div>
           </div>
@@ -399,7 +354,7 @@
           </div>
         </div>
 
-        <!-- Country Leaderboard with Interactive Sorting -->
+        <!-- Country Leaderboard -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -408,7 +363,7 @@
             <span id="statsCountriesVisitedLabel" class="text-[10px] font-bold text-slate-400">0 Countries</span>
           </div>
 
-          <!-- Sorting Controls Pill -->
+          <!-- Sorting Controls -->
           <div class="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
             <button onclick="setStatsSorting('alpha')" id="sortBtn-alpha" class="flex-1 py-1 rounded-lg transition text-center cursor-pointer">
               Alphabetical
@@ -421,9 +376,7 @@
             </button>
           </div>
 
-          <div id="countryLeaderboardList" class="space-y-2.5 pt-1">
-            <!-- Dynamic Country Leaderboard Bars -->
-          </div>
+          <div id="countryLeaderboardList" class="space-y-2.5 pt-1"></div>
         </div>
       </section>
 
@@ -514,7 +467,7 @@
       </div>
 
       <p class="text-xs text-slate-500 dark:text-slate-400">
-        All your visited sites, dates, and memories are safely stored in your browser's local memory. You can export a backup file anytime.
+        All your visited sites, dates, and memories are safely stored in your browser's local memory. You can export a backup anytime.
       </p>
 
       <div class="space-y-2.5">
@@ -545,706 +498,86 @@
 
 <script>
   // =========================================================================
-  // EXACTLY 600 SITES REPOSITORIES
+  // CONSTANTS & REGISTRY OF COUNTRY NODES (COORDINATES FOR CIRCLES/OVALS)
   // =========================================================================
   const OFFICIAL_WORLD_HERITAGE_TOTAL = 1223;
 
-  const RAW_UNESCO_DATA = [
-    // --- ITALY (50 sites) ---
-    ["it-1", "Historic Centre of Rome", "Italy", "Lazio", 1980, "Colosseum, Roman Forum, Pantheon, and Vatican properties"],
-    ["it-2", "Venice and its Lagoon", "Italy", "Veneto", 1987, "Canals and Gothic-Renaissance palaces across 118 lagoon islands"],
-    ["it-3", "Historic Centre of Florence", "Italy", "Tuscany", 1982, "Heart of the Renaissance with Duomo, Uffizi, and Ponte Vecchio"],
-    ["it-4", "Piazza del Duomo, Pisa", "Italy", "Tuscany", 1987, "Marble architectural ensemble featuring the world-famous Leaning Tower"],
-    ["it-5", "Pompeii, Herculaneum and Torre Annunziata", "Italy", "Campania", 1997, "Ancient Roman cities preserved intact by the AD 79 Vesuvius eruption"],
-    ["it-6", "Costiera Amalfitana (Amalfi Coast)", "Italy", "Campania", 1997, "Dramatic cliffside Mediterranean coastline with pastel villages"],
-    ["it-7", "The Dolomites", "Italy", "Trentino / Veneto", 2009, "Spectacular alpine mountain range with sheer cliffs and pinnacles"],
-    ["it-8", "Cinque Terre and Portovenere", "Italy", "Liguria", 1997, "Terraced coastal villages clinging to steep rugged cliffs"],
-    ["it-9", "Historic Centre of Naples", "Italy", "Campania", 1995, "Centuries of Greco-Roman to Bourbon royal heritage on the bay"],
-    ["it-10", "Sassi and Rupestrian Churches of Matera", "Italy", "Basilicata", 1993, "Ancient troglodyte cave dwellings carved into canyon limestone"],
-    ["it-11", "Historic Centre of Siena", "Italy", "Tuscany", 1995, "Medieval Gothic city centered around the shell-shaped Piazza del Campo"],
-    ["it-12", "Archaeological Area of Agrigento", "Italy", "Sicily", 1997, "Magnificent Doric Greek temples lining the Valley of the Temples"],
-    ["it-13", "Villa d'Este, Tivoli", "Italy", "Lazio", 2001, "Renaissance palace famed for its intricate terrace fountains"],
-    ["it-14", "Historic Centre of San Gimignano", "Italy", "Tuscany", 1990, "Medieval feudal village preserved with 14 iconic stone tower houses"],
-    ["it-15", "Castel del Monte", "Italy", "Puglia", 1996, "Octagonal fortress built by Emperor Frederick II with unique geometry"],
-    ["it-16", "Church of Santa Maria delle Grazie (The Last Supper)", "Italy", "Lombardy", 1980, "Home to Leonardo da Vinci's monumental fresco The Last Supper"],
-    ["it-17", "Early Christian Monuments of Ravenna", "Italy", "Emilia-Romagna", 1996, "Breathtaking Byzantine mosaics in 5th- and 6th-century basilicas"],
-    ["it-18", "Su Nuraxi di Barumini", "Italy", "Sardinia", 1997, "Megalithic Bronze Age defensive fortress and prehistoric village"],
-    ["it-19", "Villa Adriana (Hadrian's Villa), Tivoli", "Italy", "Lazio", 1999, "Emperor Hadrian's imperial complex synthesizing Greco-Egyptian architecture"],
-    ["it-20", "Verona (Historic City)", "Italy", "Veneto", 2000, "Roman arena and medieval core celebrating Shakespeare's Romeo and Juliet"],
-    ["it-21", "Aeolian Islands", "Italy", "Sicily", 2000, "Volcanic archipelago showcasing ongoing Strombolian vulcanism"],
-    ["it-22", "Val d'Orcia", "Italy", "Tuscany", 2004, "Classic Tuscan landscape of rolling clay hills and cypress avenues"],
-    ["it-23", "Genoa: Le Strade Nuove and Palazzi dei Rolli", "Italy", "Liguria", 2006, "First European example of an urban development project with aristocratic palaces"],
-    ["it-24", "Mount Etna", "Italy", "Sicily", 2013, "Europe's highest and most active iconic stratovolcano"],
-    ["it-25", "Vineyard Landscape of Piedmont: Langhe-Roero", "Italy", "Piedmont", 2014, "Centuries of viticultural landscapes producing Barolo and Barbaresco"],
-    ["it-26", "Palermo Arab-Norman and Cathedrals of Cefalù and Monreale", "Italy", "Sicily", 2015, "Harmonious synthesis of Western, Islamic, and Byzantine artistic traditions"],
-    ["it-27", "Venetian Works of Defence 16th-17th Centuries", "Italy", "Multi-region", 2017, "State of the art fortress fortifications of the Serenissima Republic"],
-    ["it-28", "Ivrea, Industrial City of the 20th Century", "Italy", "Piedmont", 2018, "Model industrial town engineered by the visionary Olivetti company"],
-    ["it-29", "Le Colline del Prosecco di Conegliano e Valdobbiadene", "Italy", "Veneto", 2019, "Characteristic steep hogback hills and terraced vineyards"],
-    ["it-30", "Padua's 14th-Century Fresco Cycles (Giotto)", "Italy", "Veneto", 2021, "Revolutionary early Renaissance fresco art in the Scrovegni Chapel"],
-    ["it-31", "The Porticoes of Bologna", "Italy", "Emilia-Romagna", 2021, "Extensive network of covered pedestrian porticoes extending over 62 km"],
-    ["it-32", "Cathedral, Torre Civica and Piazza Grande, Modena", "Italy", "Emilia-Romagna", 1997, "Superb masterpiece of Romanesque architecture by Lanfranco and Wiligelmo"],
-    ["it-33", "Crespi d'Adda", "Italy", "Lombardy", 1995, "Intact 19th-century company town built for textile workers"],
-    ["it-34", "Ferrara, City of the Renaissance, and its Po Delta", "Italy", "Emilia-Romagna", 1995, "Este ducal Renaissance court design and scenic marshland landscape"],
-    ["it-35", "Royal Palace of Caserta with Park and Aqueduct", "Italy", "Campania", 1997, "Bourbon palace rivaling Versailles with gardens and the Caroline Aqueduct"],
-    ["it-36", "Botanical Garden (Orto Botanico), Padua", "Italy", "Veneto", 1997, "The world's oldest academic botanical garden founded in 1545"],
-    ["it-37", "City of Vicenza and the Palladian Villas", "Italy", "Veneto", 1994, "Classical architectural masterworks designed by Andrea Palladio"],
-    ["it-38", "Residences of the Royal House of Savoy", "Italy", "Piedmont", 1997, "Grand palaces and hunting lodges built across Turin by the House of Savoy"],
-    ["it-39", "Historic Centre of Urbino", "Italy", "Marche", 1998, "Hilltop Renaissance city and cultural court of Duke Federico da Montefeltro"],
-    ["it-40", "Villa Romana del Casale", "Italy", "Sicily", 1997, "Luxurious Roman villa renowned for pristine polychrome floor mosaics"],
-    ["it-41", "Cilento and Vallo di Diano National Park with Paestum", "Italy", "Campania", 1998, "Magnificent Doric Greek temples of Paestum and Velia"],
-    ["it-42", "Late Baroque Towns of the Val di Noto", "Italy", "Sicily", 2002, "Eight southeastern Sicilian towns rebuilt after the 1693 earthquake in dramatic baroque"],
-    ["it-43", "Sacri Monti of Piedmont and Lombardy", "Italy", "Piedmont / Lombardy", 2003, "Nine chapels and sanctuaries integrated into alpine hillside nature"],
-    ["it-44", "Etruscan Necropolises of Cerveteri and Tarquinia", "Italy", "Lazio", 2004, "Tumulus rock-cut painted tombs illustrating Etruscan daily life"],
-    ["it-45", "Syracuse and the Rocky Necropolis of Pantalica", "Italy", "Sicily", 2005, "Greek and Roman theatre ruins and 5,000 prehistoric rock-cut chamber tombs"],
-    ["it-46", "Mantua and Sabbioneta", "Italy", "Lombardy", 2008, "Gonzaga Renaissance court transformation and ideal fortress city planning"],
-    ["it-47", "Rhaetian Railway in the Albula / Bernina Landscapes", "Italy", "Lombardy", 2008, "Spectacular trans-alpine narrow-gauge railway crossing high mountain passes"],
-    ["it-48", "Longobards in Italy. Places of the Power (568-774 A.D.)", "Italy", "Multi-region", 2011, "Monasteries, fortresses, and churches constructed during Lombard rule"],
-    ["it-49", "Prehistoric Pile Dwellings around the Alps", "Italy", "Multi-region", 2011, "Waterlogged prehistoric stilt settlements preserving wood and textiles"],
-    ["it-50", "Medici Villas and Gardens in Tuscany", "Italy", "Tuscany", 2013, "Country estates representing Renaissance aristocratic patronage of arts and philosophy"],
+  // Country Bubble Geometry: circles for smaller countries, ovals for larger/taller ones
+  const MAP_COUNTRY_NODES = [
+    // North America
+    { code: "US", country: "United States", shape: "oval", cx: 215, cy: 175, rx: 25, ry: 15 },
+    { code: "CA", country: "Canada", shape: "oval", cx: 205, cy: 110, rx: 28, ry: 16 },
+    { code: "MX", country: "Mexico", shape: "oval", cx: 195, cy: 235, rx: 14, ry: 11 },
+    { code: "CU", country: "Cuba", shape: "oval", cx: 248, cy: 228, rx: 11, ry: 6 },
+    { code: "GT", country: "Guatemala", shape: "circle", cx: 212, cy: 260, r: 7 },
+    { code: "CR", country: "Costa Rica", shape: "circle", cx: 236, cy: 280, r: 6 },
+    { code: "PA", country: "Panama", shape: "circle", cx: 252, cy: 284, r: 6 },
 
-    // --- FRANCE (45 sites) ---
-    ["fr-1", "Mont-Saint-Michel and its Bay", "France", "Normandy", 1979, "Gothic Benedictine abbey perched dramatically on a tidal rocky island"],
-    ["fr-2", "Palace and Park of Versailles", "France", "Île-de-France", 1979, "Royal seat of the Sun King Louis XIV and French classical architecture"],
-    ["fr-3", "Paris, Banks of the Seine", "France", "Île-de-France", 1991, "Riverside monuments including Notre-Dame, Louvre, and the Eiffel Tower"],
-    ["fr-4", "Chartres Cathedral", "France", "Centre-Val de Loire", 1979, "Masterpiece of High Gothic art with authentic 12th-century blue stained glass"],
-    ["fr-5", "Prehistoric Sites of the Vézère Valley (Lascaux)", "France", "Nouvelle-Aquitaine", 1979, "Paleolithic cave art sanctuaries dating back 17,000 years"],
-    ["fr-6", "Pont du Gard (Roman Aqueduct)", "France", "Occitanie", 1985, "Three-tiered Roman aqueduct bridge spanning the Gardon river"],
-    ["fr-7", "Historic Fortified City of Carcassonne", "France", "Occitanie", 1997, "Double-walled medieval citadel with 52 towers overlooking the Aude"],
-    ["fr-8", "The Loire Valley Châteaux", "France", "Centre-Val de Loire", 2000, "Exceptional cultural landscape of Renaissance castles including Chambord"],
-    ["fr-9", "Amiens Cathedral", "France", "Hauts-de-France", 1981, "One of the largest 13th-century classic High Gothic churches"],
-    ["fr-10", "Palace and Park of Fontainebleau", "France", "Île-de-France", 1981, "Royal residence blending French medieval, Renaissance, and Italian arts"],
-    ["fr-11", "Roman Theatre and Triumphal Arch of Orange", "France", "Provence-Alpes-Côte d'Azur", 1981, "Finest surviving Roman theatre with monumental imperial stage wall"],
-    ["fr-12", "Arles, Roman and Romanesque Monuments", "France", "Provence-Alpes-Côte d'Azur", 1981, "Roman amphitheatre, theatre, and the Romanesque Church of Saint-Trophime"],
-    ["fr-13", "Cistercian Abbey of Fontenay", "France", "Bourgogne-Franche-Comté", 1981, "Austerely beautiful Romanesque Cistercian monastery founded in 1118"],
-    ["fr-14", "Strasbourg: Grand-Île and Neustadt", "France", "Grand Est", 1988, "Rhine capital showcasing Gothic cathedral and Prussian imperial district"],
-    ["fr-15", "Cathedral of Notre-Dame and Palace of Tau, Reims", "France", "Grand Est", 1991, "Coronation cathedral of the French monarchs and Gothic sculpture hub"],
-    ["fr-16", "Canal du Midi", "France", "Occitanie", 1996, "17th-century engineering triumph connecting the Mediterranean to the Atlantic"],
-    ["fr-17", "Historic Site of Lyon", "France", "Auvergne-Rhône-Alpes", 1998, "Two millennia of silk-weaving traboules, Roman ruins, and Renaissance quarters"],
-    ["fr-18", "Jurisdiction of Saint-Émilion", "France", "Nouvelle-Aquitaine", 1999, "Historic viticultural landscape and monolithic subterranean church"],
-    ["fr-19", "Belfries of Belgium and France", "France", "Hauts-de-France", 1999, "Civic bell towers symbolizing municipal freedom and town autonomy"],
-    ["fr-20", "Provins, Town of Medieval Fairs", "France", "Île-de-France", 2001, "Preserved medieval trading town of the famous Champagne Fairs"],
-    ["fr-21", "Le Havre, the City Rebuilt by Auguste Perret", "France", "Normandy", 2005, "Pioneering post-WWII reconstruction using prefabricated reinforced concrete"],
-    ["fr-22", "Bordeaux, Port of the Moon", "France", "Nouvelle-Aquitaine", 2007, "Enlightenment neoclassical architectural urban ensemble on the Garonne"],
-    ["fr-23", "Fortifications of Vauban", "France", "Multi-region", 2008, "Twelve groups of classic military bastion forts engineered by Vauban"],
-    ["fr-24", "Episcopal City of Albi", "France", "Occitanie", 2010, "Red brick Gothic cathedral fortress of Sainte-Cécile and Berbie palace"],
-    ["fr-25", "The Causses and the Cévennes", "France", "Occitanie", 2011, "Mediterranean agro-pastoral cultural landscape shaped by deep gorges"],
-    ["fr-26", "Decorated Cave of Pont d'Arc (Chauvet-Pont d'Arc)", "France", "Auvergne-Rhône-Alpes", 2014, "Earliest known pristine figurative cave drawings dating back 36,000 years"],
-    ["fr-27", "Champagne Hillsides, Houses and Cellars", "France", "Grand Est", 2015, "Crayères chalk cellars and vineyards pioneering sparkling wine production"],
-    ["fr-28", "The Climats, terroirs of Burgundy", "France", "Bourgogne-Franche-Comté", 2015, "Precisely demarcated vineyard plots on the slopes of the Côte de Nuits and Beaune"],
-    ["fr-29", "Architectural Work of Le Corbusier", "France", "Multi-region", 2016, "Modernist architecture including Villa Savoye and Ronchamp Chapel"],
-    ["fr-30", "Chaîne des Puys - Limagne Fault Tectonic Arena", "France", "Auvergne-Rhône-Alpes", 2018, "Alignment of volcanic cinder cones revealing continental breakup rifting"],
-    ["fr-31", "Cordouan Lighthouse", "France", "Nouvelle-Aquitaine", 2021, "Monumental Renaissance stone lighthouse standing tall in the Gironde estuary"],
-    ["fr-32", "Nice, Winter Resort Town of the Riviera", "France", "Provence-Alpes-Côte d'Azur", 2021, "Cosmopolitan seaside resort shaped by aristocratic European winter tourism"],
-    ["fr-33", "Maison Carrée of Nîmes", "France", "Occitanie", 2023, "One of the best preserved ancient Roman temple facades in the world"],
-    ["fr-34", "Volcanoes and Forests of Mount Pelée, Martinique", "France", "Martinique", 2023, "Lush tropical rainforests and volcano that erupted catastrophically in 1902"],
-    ["fr-35", "Gulf of Porto: Calanche of Piana and Scandola Reserve", "France", "Corsica", 1983, "Porphyry cliffs, crystal waters, and pristine Corsican marine reserve"],
-    ["fr-36", "Pyrénées - Mont Perdu", "France", "Occitanie", 1997, "Dramatic limestone massifs shared with Spain with pastoral village traditions"],
-    ["fr-37", "Lagoons of New Caledonia", "France", "New Caledonia", 2008, "Spectacular reef systems and rich marine biodiversity in the South Pacific"],
-    ["fr-38", "Pitons, Cirques and Remparts of Reunion Island", "France", "Réunion", 2010, "Towering volcanic peaks and dramatic amphitheater cirques in the Indian Ocean"],
-    ["fr-39", "French Austral Lands and Seas", "France", "Sub-Antarctic", 2019, "Immense marine sanctuary harboring massive king penguin and seabird colonies"],
-    ["fr-40", "Taputapuātea", "France", "French Polynesia", 2017, "Sacred political and ceremonial marae complex on the island of Raiatea"],
-    ["fr-41", "Abbey Church of Saint-Savin sur Gartempe", "France", "Nouvelle-Aquitaine", 1983, "Romanesque murals dating from 11th and 12th centuries in mint condition"],
-    ["fr-42", "Place Stanislas, Place de la Carrière and Place d'Alliance in Nancy", "France", "Grand Est", 1983, "Monumental urban ensemble of Enlightenment rococo architecture and gilded iron gates"],
-    ["fr-43", "Royal Saltworks of Arc-et-Senans and Salins-les-Bains", "France", "Bourgogne-Franche-Comté", 1982, "Utopian Enlightenment industrial architecture planned by Claude-Nicolas Ledoux"],
-    ["fr-44", "Routes of Santiago de Compostela in France", "France", "Multi-region", 1998, "Churches, basilicas, and hospitals along the four medieval pilgrimage routes to Spain"],
-    ["fr-45", "The Great Spa Towns of Europe (Vichy)", "France", "Auvergne-Rhône-Alpes", 2021, "Famous thermal spa resort town known for its parks, casinos, and spring pavilions"],
+    // South America
+    { code: "BR", country: "Brazil", shape: "oval", cx: 345, cy: 340, rx: 22, ry: 20 },
+    { code: "PE", country: "Peru", shape: "oval", cx: 285, cy: 320, rx: 12, ry: 15 },
+    { code: "AR", country: "Argentina", shape: "oval", cx: 310, cy: 420, rx: 11, ry: 24 },
+    { code: "CL", country: "Chile", shape: "oval", cx: 288, cy: 420, rx: 7, ry: 24 },
+    { code: "CO", country: "Colombia", shape: "oval", cx: 290, cy: 265, rx: 12, ry: 12 },
+    { code: "EC", country: "Ecuador", shape: "circle", cx: 272, cy: 288, r: 7 },
+    { code: "BO", country: "Bolivia", shape: "oval", cx: 312, cy: 350, rx: 12, ry: 12 },
 
-    // --- SPAIN (42 sites) ---
-    ["es-1", "Works of Antoni Gaudí", "Spain", "Catalonia", 1984, "Architectural masterworks in Barcelona including Sagrada Família and Park Güell"],
-    ["es-2", "Alhambra, Generalife and Albayzín, Granada", "Spain", "Andalusia", 1984, "Moorish palace complex, fortified citadel, and fragrant Generalife gardens"],
-    ["es-3", "Historic Centre of Cordoba", "Spain", "Andalusia", 1984, "The Great Mosque (Mezquita) with its forest of two-tier striped arches"],
-    ["es-4", "Santiago de Compostela (Old Town)", "Spain", "Galicia", 1985, "Historic terminus of the Saint James pilgrimage route with Romanesque cathedral"],
-    ["es-5", "Old Town of Segovia and its Aqueduct", "Spain", "Castile and León", 1985, "Un-mortared Roman aqueduct bridge towering over picturesque Castilian town"],
-    ["es-6", "Historic City of Toledo", "Spain", "Castilla-La Mancha", 1986, "Ancient capital where Christian, Islamic, and Jewish cultures flourished"],
-    ["es-7", "Burgos Cathedral", "Spain", "Castile and León", 1984, "Grand Spanish Gothic cathedral housing the tomb of legendary warrior El Cid"],
-    ["es-8", "Monastery and Site of El Escorial, Madrid", "Spain", "Madrid", 1984, "Monumental Renaissance monastery palace built by King Philip II"],
-    ["es-9", "Cave of Altamira and Paleolithic Cave Art", "Spain", "Cantabria", 1985, "Polychrome bison cave paintings dubbed the Sistine Chapel of Prehistoric Art"],
-    ["es-10", "Old Town of Ávila with its Extramuros Churches", "Spain", "Castile and León", 1985, "Complete medieval city enclosed by 88 rounded granite defense towers"],
-    ["es-11", "Historic City of Salamanca", "Spain", "Castile and León", 1988, "Golden sandstone Plaza Mayor and historic university founded in 1218"],
-    ["es-12", "Poblet Monastery", "Spain", "Catalonia", 1991, "One of the largest Cistercian abbeys containing royal tombs of Aragon"],
-    ["es-13", "Cathedral, Alcázar and Archivo de Indias in Seville", "Spain", "Andalusia", 1987, "Giralda bell tower, Mudéjar royal palace, and colonial discovery archives"],
-    ["es-14", "Archaeological Ensemble of Mérida", "Spain", "Extremadura", 1993, "Remarkable Roman theatre, amphitheatre, circus, and aqueducts of Emerita Augusta"],
-    ["es-15", "Doñana National Park", "Spain", "Andalusia", 1994, "Crucial wetland delta where the Guadalquivir river flows into the Atlantic"],
-    ["es-16", "Historic Walled Town of Cuenca", "Spain", "Castilla-La Mancha", 1996, "Medieval fortified city famed for Hanging Houses over dramatic river gorges"],
-    ["es-17", "La Lonja de la Seda de Valencia", "Spain", "Valencia", 1996, "Late Gothic silk exchange masterpiece with spiraling stone columns"],
-    ["es-18", "Palau de la Música Catalana and Hospital de Sant Pau", "Spain", "Catalonia", 1997, "Pinnacle of Catalan modernisme designed by architect Lluís Domènech i Montaner"],
-    ["es-19", "San Millán Yuso and Suso Monasteries", "Spain", "La Rioja", 1997, "Cradle where the Spanish Castilian language was first recorded in writing"],
-    ["es-20", "University and Historic Precinct of Alcalá de Henares", "Spain", "Madrid", 1998, "First planned university city in the world and birthplace of Miguel de Cervantes"],
-    ["es-21", "Ibiza, Biodiversity and Culture", "Spain", "Balearic Islands", 1999, "Dalt Vila renaissance fortifications and endemic posidonia oceanica seagrass meadows"],
-    ["es-22", "San Cristóbal de La Laguna", "Spain", "Canary Islands", 1999, "First non-fortified grid-plan town that served as model for Spanish America"],
-    ["es-23", "Archaeological Ensemble of Tárraco (Tarragona)", "Spain", "Catalonia", 1990, "Roman coastal capital with seaside amphitheatre and intact forum remains"],
-    ["es-24", "Palmeral of Elche", "Spain", "Valencia", 2000, "Intricate oasis irrigation system of date palms cultivated since Moorish rule"],
-    ["es-25", "Roman Walls of Lugo", "Spain", "Galicia", 2000, "The only fully intact Roman defensive circuit wall still standing in Europe"],
-    ["es-26", "Catalan Romanesque Churches of the Vall de Boí", "Spain", "Catalonia", 2000, "Nine slender Romanesque stone churches tucked into Pyrenean alpine valley"],
-    ["es-27", "Archaeological Site of Atapuerca", "Spain", "Castile and León", 2000, "Caves revealing the earliest known human fossil remains in Europe"],
-    ["es-28", "Aranjuez Cultural Landscape", "Spain", "Madrid", 2001, "Royal gardens and palace along the Tagus and Jarama rivers"],
-    ["es-29", "Renaissance Monumental Ensembles of Úbeda and Baeza", "Spain", "Andalusia", 2003, "Flourishing 16th-century Italian Renaissance town planning in Andalusia"],
-    ["es-30", "Vizcaya Bridge (Puente Colgante)", "Spain", "Basque Country", 2006, "World's oldest transporter bridge carrying gondolas over the Nervión estuary"],
-    ["es-31", "Teide National Park", "Spain", "Canary Islands", 2007, "Mount Teide volcano rising to 3,718 m with striking volcanic caldera scenery"],
-    ["es-32", "Tower of Hercules", "Spain", "Galicia", 2009, "Ancient Roman lighthouse standing guard over the Atlantic at A Coruña"],
-    ["es-33", "Cultural Landscape of the Serra de Tramuntana", "Spain", "Balearic Islands", 2011, "Dry-stone terraced hillsides and water mills in northwestern Mallorca"],
-    ["es-34", "Antequera Dolmens Site", "Spain", "Andalusia", 2016, "Megalithic stone chambers and sacred limestone mountains (Peña de los Enamorados)"],
-    ["es-35", "Caliphate City of Medina Azahara", "Spain", "Andalusia", 2018, "Grand 10th-century Umayyad caliphate palace city unearthed near Cordoba"],
-    ["es-36", "Paseo del Prado and Buen Retiro, a landscape of Arts and Sciences", "Spain", "Madrid", 2021, "Urban avenue designed as an Enlightenment boulevard dedicated to public culture"],
-    ["es-37", "Risco Caído and the Sacred Mountains of Gran Canaria", "Spain", "Canary Islands", 2019, "Pre-Hispanic troglodyte settlements, temples, and astronomical marker caves"],
-    ["es-38", "Monuments of Oviedo and the Kingdom of the Asturias", "Spain", "Asturias", 1985, "Pre-Romanesque stone churches including Santa María del Naranco"],
-    ["es-39", "Mudéjar Architecture of Aragon", "Spain", "Aragon", 1986, "Bell towers decorated in glazed ceramic tiles reflecting Christian-Islamic fusion"],
-    ["es-40", "Old Town of Cáceres", "Spain", "Extremadura", 1986, "Medieval defensive town architecture fought over by Moors and Christians"],
-    ["es-41", "Royal Monastery of Santa María de Guadalupe", "Spain", "Extremadura", 1993, "Mudéjar sanctuary closely tied to the Spanish exploration of the New World"],
-    ["es-42", "Rock Art of the Mediterranean Basin on the Iberian Peninsula", "Spain", "Multi-region", 1998, "Late prehistoric cave paintings depicting hunting and gathering scenes"],
+    // Europe
+    { code: "GB", country: "United Kingdom", shape: "oval", cx: 472, cy: 132, rx: 9, ry: 13 },
+    { code: "FR", country: "France", shape: "oval", cx: 495, cy: 165, rx: 13, ry: 12 },
+    { code: "ES", country: "Spain", shape: "oval", cx: 472, cy: 195, rx: 14, ry: 11 },
+    { code: "PT", country: "Portugal", shape: "oval", cx: 450, cy: 195, rx: 7, ry: 12 },
+    { code: "DE", country: "Germany", shape: "oval", cx: 520, cy: 148, rx: 11, ry: 12 },
+    { code: "IT", country: "Italy", shape: "oval", cx: 536, cy: 188, rx: 8, ry: 15 },
+    { code: "CH", country: "Switzerland", shape: "circle", cx: 508, cy: 170, r: 7 },
+    { code: "NL", country: "Netherlands", shape: "circle", cx: 504, cy: 142, r: 7 },
+    { code: "BE", country: "Belgium", shape: "circle", cx: 496, cy: 152, r: 6.5 },
+    { code: "AT", country: "Austria", shape: "oval", cx: 532, cy: 165, rx: 10, ry: 6.5 },
+    { code: "GR", country: "Greece", shape: "oval", cx: 574, cy: 215, rx: 10, ry: 10 },
+    { code: "MT", country: "Malta", shape: "circle", cx: 546, cy: 228, r: 6 },
+    { code: "SE", country: "Sweden", shape: "oval", cx: 538, cy: 105, rx: 9, ry: 18 },
+    { code: "NO", country: "Norway", shape: "oval", cx: 518, cy: 100, rx: 8, ry: 18 },
+    { code: "FI", country: "Finland", shape: "oval", cx: 565, cy: 95, rx: 9, ry: 15 },
+    { code: "PL", country: "Poland", shape: "oval", cx: 552, cy: 145, rx: 12, ry: 11 },
+    { code: "CZ", country: "Czech Republic", shape: "circle", cx: 536, cy: 155, r: 7 },
+    { code: "HR", country: "Croatia", shape: "circle", cx: 548, cy: 182, r: 6.5 },
 
-    // --- GERMANY (38 sites) ---
-    ["de-1", "Aachen Cathedral", "Germany", "North Rhine-Westphalia", 1978, "Charlemagne's Palatine Chapel and imperial coronation cathedral"],
-    ["de-2", "Cologne Cathedral", "Germany", "North Rhine-Westphalia", 1996, "Masterwork of High Gothic architecture holding the Shrine of the Three Kings"],
-    ["de-3", "Würzburg Residence with the Court Gardens", "Germany", "Bavaria", 1981, "Baroque prince-bishop palace famed for Tiepolo's monumental ceiling fresco"],
-    ["de-4", "Pilgrimage Church of Wies", "Germany", "Bavaria", 1983, "Bavarian Rococo masterpiece sanctuary nestled in an alpine meadow"],
-    ["de-5", "Castles of Augustusburg and Falkenlust at Brühl", "Germany", "North Rhine-Westphalia", 1984, "Rococo residences and formal French gardens of the Archbishop of Cologne"],
-    ["de-6", "St Mary's Cathedral and St Michael's Church at Hildesheim", "Germany", "Lower Saxony", 1985, "Ottonian Romanesque bronze doors and painted wooden ceiling"],
-    ["de-7", "Roman Monuments, Cathedral and Church of Our Lady in Trier", "Germany", "Rhineland-Palatinate", 1986, "Porta Nigra Roman gate, baths, and Constantine's throne room basilica"],
-    ["de-8", "Hanseatic City of Lübeck", "Germany", "Schleswig-Holstein", 1987, "Queen of the Hanseatic League with Holstentor gate and brick Gothic towers"],
-    ["de-9", "Palaces and Parks of Potsdam and Berlin (Sanssouci)", "Germany", "Brandenburg / Berlin", 1990, "Frederick the Great's rococo palace and extensive landscaped royal parks"],
-    ["de-10", "Abbey and Altenmünster of Lorsch", "Germany", "Hesse", 1991, "Carolingian gatehouse Torhalle representing rare pre-Romanesque architecture"],
-    ["de-11", "Mines of Rammelsberg and Historic Town of Goslar", "Germany", "Lower Saxony", 1992, "Millennium of continuous silver and copper ore mining in the Harz mountains"],
-    ["de-12", "Town of Bamberg", "Germany", "Bavaria", 1993, "Intact medieval layout with Old Town Hall perched atop the Regnitz bridge"],
-    ["de-13", "Collegiate Church, Castle and Old Town of Quedlinburg", "Germany", "Saxony-Anhalt", 1994, "More than 1,300 half-timbered houses beneath Romanesque collegiate church"],
-    ["de-14", "Völklingen Ironworks", "Germany", "Saarland", 1994, "Only intact historic pig-iron smelting plant from the industrial peak"],
-    ["de-15", "Messel Pit Fossil Site", "Germany", "Hesse", 1995, "Pristine Eocene lake shale fossils preserving mammals with hair and feathers"],
-    ["de-16", "Bauhaus Sites in Weimar, Dessau and Bernau", "Germany", "Multi-region", 1996, "Birthplace of 20th-century modernist design and architecture by Gropius"],
-    ["de-17", "Luther Memorials in Eisleben and Wittenberg", "Germany", "Saxony-Anhalt", 1996, "Houses and churches where Martin Luther launched the Protestant Reformation"],
-    ["de-18", "Classical Weimar", "Germany", "Thuringia", 1998, "Golden age of German literature led by Goethe, Schiller, and Herder"],
-    ["de-19", "Museumsinsel (Museum Island), Berlin", "Germany", "Berlin", 1999, "Ensemble of five world-renowned museums situated in central Berlin"],
-    ["de-20", "Wartburg Castle", "Germany", "Thuringia", 1999, "Feudal fortress where Martin Luther translated the New Testament into German"],
-    ["de-21", "Garden Kingdom of Dessau-Wörlitz", "Germany", "Saxony-Anhalt", 2000, "First English landscape garden on the European continent"],
-    ["de-22", "Monastic Island of Reichenau", "Germany", "Baden-Württemberg", 2000, "Benedictine monastery on Lake Constance famed for Ottonian manuscript painting"],
-    ["de-23", "Zollverein Coal Mine Industrial Complex in Essen", "Germany", "North Rhine-Westphalia", 2001, "Bauhaus-style Ruhr valley coal colliery architecture"],
-    ["de-24", "Upper Middle Rhine Valley", "Germany", "Rhineland-Palatinate", 2002, "Romantic gorge lined with 40 hilltop castles, terraced vineyards, and Lorelei rock"],
-    ["de-25", "Historic Centres of Stralsund and Wismar", "Germany", "Mecklenburg-Vorpommern", 2002, "Hanseatic coastal trading centres characterized by Brick Gothic churches"],
-    ["de-26", "Old Town of Regensburg with Stadtamhof", "Germany", "Bavaria", 2006, "Best-preserved large medieval city in Germany with Stone Bridge over the Danube"],
-    ["de-27", "Bergpark Wilhelmshöhe", "Germany", "Hesse", 2013, "Monumental baroque hillside water cascades crowned by the Hercules statue"],
-    ["de-28", "Speicherstadt and Kontorhaus District with Chilehaus", "Germany", "Hamburg", 2015, "World's largest historic warehouse district on oak piles with brick expressionism"],
-    ["de-29", "Caves and Ice Age Art in the Swabian Jura", "Germany", "Baden-Württemberg", 2017, "Earliest figurative carvings including the mammoth-ivory Lion Man"],
-    ["de-30", "ShUM Sites of Speyer, Worms and Mainz", "Germany", "Rhineland-Palatinate", 2021, "Cradle of Ashkenazi Jewish culture, scholarship, synagogues, and cemeteries"],
-    ["de-31", "Fagus Factory in Alfeld", "Germany", "Lower Saxony", 2011, "Walter Gropius glass-curtain wall factory pioneering industrial modernism"],
-    ["de-32", "Margravial Opera House Bayreuth", "Germany", "Bavaria", 2012, "Finest surviving baroque court opera theatre built for Princess Wilhelmine"],
-    ["de-33", "Carolingian Westwork and Civitas Corvey", "Germany", "North Rhine-Westphalia", 2014, "Original preserved 9th-century monastic westwork facade along the Weser"],
-    ["de-34", "Naumburg Cathedral", "Germany", "Saxony-Anhalt", 2018, "Masterpiece of medieval art featuring life-sized donor statues including Uta"],
-    ["de-35", "Erzgebirge/Krušnohoří Mining Region", "Germany", "Saxony", 2019, "Ore mountain landscape mined for silver, tin, cobalt, and uranium since 12th century"],
-    ["de-36", "Water Management System of Augsburg", "Germany", "Bavaria", 2019, "Cascading canal networks, drinking water towers, and hydro-power works since 14th century"],
-    ["de-37", "Mathildenhöhe Darmstadt", "Germany", "Hesse", 2021, "Art Nouveau artists' colony featuring the Wedding Tower and exhibition hall"],
-    ["de-38", "The Great Spa Towns of Europe (Baden-Baden, Bad Ems, Bad Kissingen)", "Germany", "Multi-region", 2021, "Elite international mineral bathing resorts celebrating Belle Époque cure culture"],
+    // Middle East & Africa
+    { code: "TR", country: "Turkey", shape: "oval", cx: 620, cy: 195, rx: 18, ry: 10 },
+    { code: "EG", country: "Egypt", shape: "oval", cx: 605, cy: 235, rx: 14, ry: 12 },
+    { code: "MA", country: "Morocco", shape: "oval", cx: 465, cy: 225, rx: 13, ry: 10 },
+    { code: "TN", country: "Tunisia", shape: "circle", cx: 520, cy: 220, r: 7 },
+    { code: "JO", country: "Jordan", shape: "circle", cx: 625, cy: 232, r: 6 },
+    { code: "IL", country: "Israel", shape: "circle", cx: 618, cy: 230, r: 5.5 },
+    { code: "SA", country: "Saudi Arabia", shape: "oval", cx: 650, cy: 250, rx: 18, ry: 16 },
+    { code: "IR", country: "Iran", shape: "oval", cx: 675, cy: 215, rx: 17, ry: 15 },
+    { code: "ZA", country: "South Africa", shape: "oval", cx: 575, cy: 415, rx: 16, ry: 13 },
+    { code: "ET", country: "Ethiopia", shape: "oval", cx: 645, cy: 295, rx: 13, ry: 12 },
+    { code: "TZ", country: "Tanzania", shape: "oval", cx: 630, cy: 335, rx: 12, ry: 11 },
+    { code: "KE", country: "Kenya", shape: "circle", cx: 635, cy: 312, r: 8 },
 
-    // --- CHINA (40 sites) ---
-    ["cn-1", "The Great Wall", "China", "Northern China", 1987, "Vast military defense rampart spanning mountain ridges across thousands of miles"],
-    ["cn-2", "Imperial Palaces of the Ming and Qing Dynasties (Forbidden City)", "China", "Beijing / Liaoning", 1987, "Massive palatial complex that housed Chinese emperors for over 500 years"],
-    ["cn-3", "Mausoleum of the First Qin Emperor (Terracotta Army)", "China", "Shaanxi", 1987, "Thousands of lifelike terracotta warriors and chariots guarding Emperor Qin"],
-    ["cn-4", "Mogao Caves, Dunhuang", "China", "Gansu", 1987, "Buddhist cave temples on the Silk Road containing millennium of mural frescoes"],
-    ["cn-5", "Mount Taishan", "China", "Shandong", 1987, "Most revered of China's five sacred Taoist mountains, climbing heaven's gate"],
-    ["cn-6", "Mount Huangshan", "China", "Anhui", 1990, "Granite peaks, twisted pines, and sea of clouds that inspired classic ink painting"],
-    ["cn-7", "Jiuzhaigou Valley Scenic Area", "China", "Sichuan", 1992, "Multi-tiered turquoise mineral lakes, travertine waterfalls, and snow peaks"],
-    ["cn-8", "Huanglong Scenic and Historic Interest Area", "China", "Sichuan", 1992, "Golden travertine terraced pools and home to the giant panda"],
-    ["cn-9", "Wulingyuan Scenic and Historic Interest Area", "China", "Hunan", 1992, "Thousands of dramatic quartzite sandstone karst pillars towering over forest"],
-    ["cn-10", "Mountain Resort and its Outlying Temples, Chengde", "China", "Hebei", 1994, "Qing summer palace blending Han, Tibetan, and Mongolian architecture"],
-    ["cn-11", "Historic Ensemble of the Potala Palace, Lhasa", "China", "Tibet", 1994, "Sacred winter residence of the Dalai Lama perched high on the Tibetan plateau"],
-    ["cn-12", "Temple and Cemetery of Confucius, Qufu", "China", "Shandong", 1994, "Memorial complex commemorating Confucius, father of Chinese philosophical thought"],
-    ["cn-13", "Mount Emei and Leshan Giant Buddha", "China", "Sichuan", 1996, "71-meter stone Buddha carved into river cliffside facing sacred Mount Emei"],
-    ["cn-14", "Lushan National Park", "China", "Jiangxi", 1996, "Sacred cultural mountain blending Buddhist, Taoist, and modern political history"],
-    ["cn-15", "Ancient City of Ping Yao", "China", "Shanxi", 1997, "Traditional Han Chinese walled banking city preserved with original fortifications"],
-    ["cn-16", "Classical Gardens of Suzhou", "China", "Jiangsu", 1997, "Scholarly miniature landscapes recreating nature in enclosed courtyards"],
-    ["cn-17", "Summer Palace, an Imperial Garden in Beijing", "China", "Beijing", 1998, "Masterpiece of royal landscape design centering around Kunming Lake and Longevity Hill"],
-    ["cn-18", "Temple of Heaven, Beijing", "China", "Beijing", 1998, "Circular ceremonial altar where emperors prayed for abundant agricultural harvests"],
-    ["cn-19", "Dazu Rock Carvings", "China", "Chongqing", 1999, "Steep cliffside grottoes depicting harmonious Buddhist, Taoist, and Confucian statues"],
-    ["cn-20", "Mount Wuyi", "China", "Fujian", 1999, "Dramatic river gorge and cradle of Neo-Confucianism and Da Hong Pao tea"],
-    ["cn-21", "Ancient Villages in Southern Anhui – Xidi and Hongcun", "China", "Anhui", 2000, "Traditional Huizhou residential water-mirror villages with black and white walls"],
-    ["cn-22", "Longmen Grottoes", "China", "Henan", 2000, "Thousands of Buddhist stone statues carved into limestone cliffs of the Yi River"],
-    ["cn-23", "Imperial Tombs of the Ming and Qing Dynasties", "China", "Multi-region", 2000, "Monumental burial grounds designed according to traditional feng shui principles"],
-    ["cn-24", "Yungang Grottoes, Datong", "China", "Shanxi", 2001, "Early Buddhist rock-cut cave art reflecting Silk Road Greco-Indian influences"],
-    ["cn-25", "Three Parallel Rivers of Yunnan", "China", "Yunnan", 2003, "Yangtze, Mekong, and Salween rivers converging through deep mountain gorges"],
-    ["cn-26", "Historic Centre of Macao", "China", "Macao", 2005, "East-meets-West colonial Portuguese architecture and A-Ma temple"],
-    ["cn-27", "Sichuan Giant Panda Sanctuaries", "China", "Sichuan", 2006, "Crucial refuge harboring more than 30 percent of the world's wild giant pandas"],
-    ["cn-28", "Yin Xu", "China", "Henan", 2006, "Capital of the ancient Shang dynasty where Oracle Bone inscriptions were discovered"],
-    ["cn-29", "South China Karst", "China", "Guizhou / Guangxi / Yunnan", 2007, "Tower karst, stone forests, and spectacular underground river caves"],
-    ["cn-30", "Fujian Tulou", "China", "Fujian", 2008, "Large circular fortified earthen clan compounds built by the Hakka people"],
-    ["cn-31", "Mount Sanqingshan National Park", "China", "Jiangxi", 2008, "Pillar granite peaks shaped like human and animal silhouettes amid mist"],
-    ["cn-32", "Mount Wutai", "China", "Shanxi", 2009, "Sacred Buddhist peak with dozens of ancient timber temple monasteries"],
-    ["cn-33", "West Lake Cultural Landscape of Hangzhou", "China", "Zhejiang", 2011, "Scenic lake with causeways and pagodas inspiring centuries of poets"],
-    ["cn-34", "The Grand Canal", "China", "Eastern China", 2014, "World's longest ancient artificial waterway connecting Beijing and Hangzhou"],
-    ["cn-35", "Archaeological Ruins of Liangzhu City", "China", "Zhejiang", 2019, "5,000-year-old jade culture demonstrating early hydraulic urban civilization"],
-    ["cn-36", "Kaiping Diaolou and Villages", "China", "Guangdong", 2007, "Multi-storied defensive village watchtowers fusing Chinese and Western architectural styles"],
-    ["cn-37", "Silk Roads: the Routes Network of Chang'an-Tianshan Corridor", "China", "Shaanxi / Henan / Xinjiang", 2014, "Strategic 5,000 km trading artery linking Chang'an to the heart of Central Asia"],
-    ["cn-38", "Hani Rice Terraces of Honghe", "China", "Yunnan", 2013, "Cascading mountain paddy terrace systems engineered by the Hani people over 1,300 years"],
-    ["cn-39", "Quanzhou: Emporium of the World in Song-Yuan China", "China", "Fujian", 2021, "Thriving medieval maritime trading gateway facilitating Silk Road sea commerce"],
-    ["cn-40", "Beijing Central Axis", "China", "Beijing", 2024, "Grand 7.8 km imperial urban axis ordering the layout of the capital since the 13th century"],
-
-    // --- UNITED KINGDOM (33 sites - ALL INSCRIBED) ---
-    ["uk-1", "Stonehenge, Avebury and Associated Sites", "United Kingdom", "England", 1986, "Prehistoric megalithic ceremonial circles aligned with solstices"],
-    ["uk-2", "Tower of London", "United Kingdom", "England", 1988, "Concentric fortress and royal palace built by William the Conqueror"],
-    ["uk-3", "Old and New Towns of Edinburgh", "United Kingdom", "Scotland", 1995, "Medieval Old Town castle contrast with Georgian neoclassical New Town"],
-    ["uk-4", "Giant's Causeway and Causeway Coast", "United Kingdom", "Northern Ireland", 1986, "40,000 interlocking basalt polygonal columns from volcanic cooling"],
-    ["uk-5", "Palace of Westminster and Westminster Abbey", "United Kingdom", "England", 1987, "Seat of Parliament with Big Ben and royal coronation abbey"],
-    ["uk-6", "City of Bath", "United Kingdom", "England", 1987, "Natural hot thermal Roman baths and Georgian sweeping Royal Crescent"],
-    ["uk-7", "Blenheim Palace", "United Kingdom", "England", 1987, "English Baroque palace and birthplace of Sir Winston Churchill"],
-    ["uk-8", "Durham Castle and Cathedral", "United Kingdom", "England", 1987, "Norman Romanesque cathedral on the river Wear holding St Cuthbert's relics"],
-    ["uk-9", "Canterbury Cathedral, St Augustine's Abbey, St Martin's Church", "United Kingdom", "England", 1988, "Mother church of the Anglican Communion and Thomas Becket's shrine"],
-    ["uk-10", "Ironbridge Gorge", "United Kingdom", "England", 1986, "Cradle of the Industrial Revolution with the world's first cast-iron bridge"],
-    ["uk-11", "Castles and Town Walls of King Edward in Gwynedd", "United Kingdom", "Wales", 1986, "Concentric medieval fortifications including Caernarfon and Conwy"],
-    ["uk-12", "St Kilda", "United Kingdom", "Scotland", 1986, "Isolated volcanic archipelago with immense seabird colonies and stone cleits"],
-    ["uk-13", "Maritime Greenwich", "United Kingdom", "England", 1997, "Royal Observatory marking the Prime Meridian and Wren's naval college"],
-    ["uk-14", "Heart of Neolithic Orkney", "United Kingdom", "Scotland", 1999, "Skara Brae prehistoric village, stone circles, and Maeshowe chambered tomb"],
-    ["uk-15", "Blaenavon Industrial Landscape", "United Kingdom", "Wales", 2000, "19th-century coal and iron production site with Big Pit colliery"],
-    ["uk-16", "Derwent Valley Mills", "United Kingdom", "England", 2001, "Richard Arkwright's water-powered cotton spinning mill system"],
-    ["uk-17", "Dorset and East Devon Coast (Jurassic Coast)", "United Kingdom", "England", 2001, "Coastal cliffs exposing 185 million years of Mesozoic fossil history"],
-    ["uk-18", "New Lanark", "United Kingdom", "Scotland", 2001, "Utopian industrial cotton mill village founded by socialist Robert Owen"],
-    ["uk-19", "Saltaire", "United Kingdom", "England", 2001, "Victorian model industrial village built for textile mill workers by Titus Salt"],
-    ["uk-20", "Royal Botanic Gardens, Kew", "United Kingdom", "England", 2003, "World-renowned botanical gardens with historic Palm House and Temperate House"],
-    ["uk-21", "Cornwall and West Devon Mining Landscape", "United Kingdom", "England", 2006, "Deep tin and copper beam engine houses transforming steam technology"],
-    ["uk-22", "Pontcysyllte Aqueduct and Canal", "United Kingdom", "Wales", 2009, "Thomas Telford's cast-iron canal trough soaring high above the River Dee"],
-    ["uk-23", "The Forth Bridge", "United Kingdom", "Scotland", 2015, "Pioneering multi-span cantilever railway bridge spanning the Firth of Forth"],
-    ["uk-24", "The English Lake District", "United Kingdom", "England", 2017, "Picturesque glaciated mountain valley landscape inspiring Romantic poets"],
-    ["uk-25", "Jodrell Bank Observatory", "United Kingdom", "England", 2019, "Lovell radio telescope pioneer exploring astrophysics and the deep cosmos"],
-    ["uk-26", "Slate Landscape of Northwest Wales", "United Kingdom", "Wales", 2021, "Quarrying landscapes that roofed the nineteenth-century world"],
-    ["uk-27", "The Great Spa Towns of Europe (Bath)", "United Kingdom", "England", 2021, "Historic mineral spring healing resort and urban spa architecture"],
-    ["uk-28", "Flow Country", "United Kingdom", "Scotland", 2024, "Vast blanket bog peatland ecosystem storing carbon in northern Scotland"],
-    ["uk-29", "Gracehill Moravian Church Settlement", "United Kingdom", "Northern Ireland", 2024, "Historic 18th-century planned egalitarian religious community"],
-    ["uk-30", "Bermuda Historic Town of St George", "United Kingdom", "Bermuda", 2000, "Oldest continuously inhabited English urban settlement in the New World"],
-    ["uk-31", "Henderson Island", "United Kingdom", "Pitcairn Islands", 1988, "Isolated raised coral atoll in the South Pacific with endemic flightless rails"],
-    ["uk-32", "Gough and Inaccessible Islands", "United Kingdom", "Tristan da Cunha", 1995, "Pristine sub-Antarctic oceanic wilderness holding endemic landbirds"],
-    ["uk-33", "Gorham's Cave Complex", "United Kingdom", "Gibraltar", 2016, "Sea caves offering evidence of the final Neanderthal occupations on Earth"],
-
-    // --- UNITED STATES (26 sites - ALL INSCRIBED) ---
-    ["us-1", "Yellowstone National Park", "United States", "Wyoming / Montana / Idaho", 1978, "Old Faithful geyser, thermal springs, and grizzly bear wilderness"],
-    ["us-2", "Grand Canyon National Park", "United States", "Arizona", 1979, "Mile-deep gorge carved over millions of years by the Colorado River"],
-    ["us-3", "Statue of Liberty", "United States", "New York", 1984, "Colossal copper statue on Liberty Island symbolizing American freedom"],
-    ["us-4", "Yosemite National Park", "United States", "California", 1984, "Glacier-carved granite cliffs of El Capitan and towering waterfalls"],
-    ["us-5", "Independence Hall", "United States", "Pennsylvania", 1979, "Philadelphia hall where Declaration of Independence and Constitution were debated"],
-    ["us-6", "Mesa Verde National Park", "United States", "Colorado", 1978, "Ancient Ancestral Puebloan cliff dwellings built under sandstone alcoves"],
-    ["us-7", "Kluane / Wrangell-St. Elias / Glacier Bay / Tatshenshini-Alsek", "United States", "Alaska", 1979, "Massive international wilderness boundary with tidewater glaciers"],
-    ["us-8", "Everglades National Park", "United States", "Florida", 1979, "Subtropical slow-moving river of grass supporting alligators and manatees"],
-    ["us-9", "Redwood National and State Parks", "United States", "California", 1980, "Tallest living trees on Earth lining foggy northern California coast"],
-    ["us-10", "Mammoth Cave National Park", "United States", "Kentucky", 1981, "World's longest known limestone cave system extending over 400 miles"],
-    ["us-11", "Olympic National Park", "United States", "Washington", 1981, "Temperate rainforests, glacier-clad peaks, and wild Pacific coastline"],
-    ["us-12", "Cahokia Mounds State Historic Site", "United States", "Illinois", 1982, "Largest pre-Columbian Mississippian earthen mound city in North America"],
-    ["us-13", "Great Smoky Mountains National Park", "United States", "North Carolina / Tennessee", 1983, "Ancient misty mountain ridges renowned for rich plant biodiversity"],
-    ["us-14", "La Fortaleza and San Juan National Historic Site", "United States", "Puerto Rico", 1983, "Massive Spanish colonial bastions guarding San Juan harbor"],
-    ["us-15", "Chaco Culture", "United States", "New Mexico", 1987, "Monumental stone masonry Great Houses built by Ancestral Puebloans"],
-    ["us-16", "Hawaii Volcanoes National Park", "United States", "Hawaii", 1987, "Kilauea and Mauna Loa active shield volcanoes reshaping the Pacific landscape"],
-    ["us-17", "Monticello and the University of Virginia", "United States", "Virginia", 1987, "Neoclassical plantation home and Academical Village designed by Thomas Jefferson"],
-    ["us-18", "Taos Pueblo", "United States", "New Mexico", 1992, "Continuously inhabited multi-storied adobe pueblo settlement over 1,000 years old"],
-    ["us-19", "Carlsbad Caverns National Park", "United States", "New Mexico", 1995, "Immense subterranean limestone Big Room adorned with speleothems"],
-    ["us-20", "Waterton-Glacier International Peace Park", "United States", "Montana", 1995, "First international peace park spanning Canadian-US Rocky mountain border"],
-    ["us-21", "Papahānaumokuākea", "United States", "Hawaii", 2010, "Vast marine national monument encompassing remote Northwestern Hawaiian Islands"],
-    ["us-22", "Monumental Earthworks of Poverty Point", "United States", "Louisiana", 2014, "Semi-elliptical concentric earthen ridges engineered by hunter-gatherers 3,400 years ago"],
-    ["us-23", "San Antonio Missions", "United States", "Texas", 2015, "Five Spanish colonial frontier Franciscan mission complexes including the Alamo"],
-    ["us-24", "The 20th-Century Architecture of Frank Lloyd Wright", "United States", "Multi-region", 2019, "Fallingwater, Guggenheim Museum, and Robie House defining Organic Architecture"],
-    ["us-25", "Hopewell Ceremonial Earthworks", "United States", "Ohio", 2023, "Complex geometrical earthwork enclosures constructed 2,000 years ago"],
-    ["us-26", "Moravian Church Settlements (Bethlehem)", "United States", "Pennsylvania", 2024, "Communal Moravian German settlement founded along the Lehigh River in 1741"],
-
-    // --- JAPAN (25 sites - ALL INSCRIBED) ---
-    ["jp-1", "Historic Monuments of Ancient Kyoto", "Japan", "Kansai", 1994, "Kinkaku-ji golden pavilion, Kiyomizu-dera, and classic zen rock gardens"],
-    ["jp-2", "Himeji-jo (Himeji Castle)", "Japan", "Kansai", 1993, "White Heron castle, Japan's finest surviving feudal wood-and-stone stronghold"],
-    ["jp-3", "Hiroshima Peace Memorial (Genbaku Dome)", "Japan", "Chugoku", 1996, "Ruins of industrial exhibition hall standing as universal beacon for peace"],
-    ["jp-4", "Shrines and Temples of Nikko", "Japan", "Kanto", 1999, "Ornate Toshogu shrine complex honoring Tokugawa shogunate in sacred mountain forest"],
-    ["jp-5", "Mount Fuji", "Japan", "Chubu", 2013, "Iconic snow-capped stratovolcano celebrated as sacred place of inspiration"],
-    ["jp-6", "Historic Monuments of Ancient Nara", "Japan", "Kansai", 1998, "Todai-ji temple housing the colossal bronze Great Buddha and deer park"],
-    ["jp-7", "Buddhist Monuments in the Horyu-ji Area", "Japan", "Kansai", 1993, "The world's oldest surviving wooden buildings dating to 7th century"],
-    ["jp-8", "Shirakami-Sanchi", "Japan", "Tohoku", 1993, "Last virgin Siebold's beech forest wilderness covering mountain slopes"],
-    ["jp-9", "Yakushima", "Japan", "Kyushu", 1993, "Subtropical island home to ancient Yaku-sugi cedar trees thousands of years old"],
-    ["jp-10", "Historic Villages of Shirakawa-go and Gokayama", "Japan", "Chubu", 1995, "Steep thatched-roof gassho-zukuri farmhouses built to withstand heavy snowfall"],
-    ["jp-11", "Itsukushima Shinto Shrine", "Japan", "Chugoku", 1996, "Floating vermilion Torii gate and pier shrine rising above Seto Inland Sea"],
-    ["jp-12", "Gusuku Sites of the Kingdom of Ryukyu", "Japan", "Okinawa", 2000, "Ruins of stone Ryukyuan castles reflecting East Asian maritime trade"],
-    ["jp-13", "Sacred Sites and Pilgrimage Routes in the Kii Mountain Range", "Japan", "Kansai", 2004, "Kumano Kodo ancient mountain trails connecting Shinto and Buddhist shrines"],
-    ["jp-14", "Shiretoko", "Japan", "Hokkaido", 2005, "Pristine northern peninsula with brown bears, sea ice, and rich marine ecology"],
-    ["jp-15", "Iwami Ginzan Silver Mine", "Japan", "Chugoku", 2007, "Historic mountain silver mines that produced one-third of the world's silver"],
-    ["jp-16", "Hiraizumi – Temples and Gardens of the Pure Land", "Japan", "Tohoku", 2011, "Chuson-ji temple and Pure Land Buddhist gardens built by the Northern Fujiwara clan"],
-    ["jp-17", "Ogasawara Islands", "Japan", "Tokyo (Pacific)", 2011, "Subtropical Bonin oceanic islands displaying unique evolution (Galapagos of the Orient)"],
-    ["jp-18", "Tomioka Silk Mill", "Japan", "Kanto", 2014, "Pioneering 1872 modern silk-reeling factory transitioning Japan to industrial power"],
-    ["jp-19", "Sites of Japan's Meiji Industrial Revolution", "Japan", "Kyushu / Multi-region", 2015, "Gunkanjima coal island, Yahata steel, and early shipyards"],
-    ["jp-20", "The Architectural Work of Le Corbusier (Museum of Western Art)", "Japan", "Tokyo", 2016, "Modernist museum building designed by Le Corbusier in Ueno Park"],
-    ["jp-21", "Sacred Island of Okinoshima", "Japan", "Kyushu", 2017, "Sacred island where ancient maritime rituals were preserved with strict taboos"],
-    ["jp-22", "Hidden Christian Sites in the Nagasaki Region", "Japan", "Kyushu", 2018, "Villages where secret Christian faith survived over two centuries of Tokugawa ban"],
-    ["jp-23", "Mozu-Furuichi Kofun Group: Mounded Tombs of Ancient Japan", "Japan", "Kansai", 2019, "Giant keyhole-shaped earthen tumuli tombs of 4th-5th century Japanese emperors"],
-    ["jp-24", "Jomon Prehistoric Sites in Northern Japan", "Japan", "Tohoku / Hokkaido", 2021, "Neolithic hunter-gatherer settlements and circular stone monuments"],
-    ["jp-25", "Amami-Oshima Island, Tokunoshima, Northern Okinawa, and Iriomote", "Japan", "Ryukyu Islands", 2021, "Subtropical laurel forests holding endemic Amami rabbit and Iriomote cat"],
-
-    // --- GREECE (19 sites - ALL INSCRIBED) ---
-    ["gr-1", "Acropolis, Athens", "Greece", "Attica", 1987, "Parthenon and Erechtheion standing as pinnacle of classical Greek architecture"],
-    ["gr-2", "Archaeological Site of Delphi", "Greece", "Central Greece", 1987, "Pan-Hellenic sanctuary of Apollo on Mount Parnassus, seat of the Pythian oracle"],
-    ["gr-3", "Meteora", "Greece", "Thessaly", 1988, "Eastern Orthodox monasteries balanced atop towering sandstone rock pillars"],
-    ["gr-4", "Mount Athos", "Greece", "Central Macedonia", 1988, "Autonomous holy mountain with 20 fortified Eastern Orthodox monasteries"],
-    ["gr-5", "Medieval City of Rhodes", "Greece", "South Aegean", 1988, "Grand Master's Palace and street of the Knights of St. John enclosed by ramparts"],
-    ["gr-6", "Archaeological Site of Olympia", "Greece", "Western Greece", 1989, "Birthplace of the Olympic Games featuring Temple of Zeus and stadium"],
-    ["gr-7", "Archaeological Site of Mystras", "Greece", "Peloponnese", 1989, "Fortified Byzantine capital of Morea overlooking Sparta"],
-    ["gr-8", "Delos", "Greece", "South Aegean", 1990, "Sacred Cycladic island birthplace of Apollo and Artemis with Terrace of the Lions"],
-    ["gr-9", "Monasteries of Daphni, Hosios Loukas and Nea Moni of Chios", "Greece", "Multi-region", 1990, "Middle Byzantine churches adorned with brilliant gold mosaic cycles"],
-    ["gr-10", "Pythagoreion and Heraion of Samos", "Greece", "North Aegean", 1992, "Sanctuary of Hera and Tunnel of Eupalinos ancient aqueduct tunnel"],
-    ["gr-11", "Archaeological Site of Aigai (Vergina)", "Greece", "Central Macedonia", 1996, "Ancient capital of Macedonia holding tomb of King Philip II, father of Alexander"],
-    ["gr-12", "Archaeological Sites of Mycenae and Tiryns", "Greece", "Peloponnese", 1999, "Bronze Age Mycenaean citadels famed for Lion Gate and Cyclopean masonry"],
-    ["gr-13", "Historic Centre with Monastery of Saint-John, Patmos", "Greece", "South Aegean", 1999, "Cave of the Apocalypse where St. John composed the Book of Revelation"],
-    ["gr-14", "Old Town of Corfu", "Greece", "Ionian Islands", 2007, "Venetian fortress harbor town with neoclassical arches on the Ionian Sea"],
-    ["gr-15", "Archaeological Site of Philippi", "Greece", "Eastern Macedonia", 2016, "Walled Roman city on the Via Egnatia where Apostle Paul preached in Europe"],
-    ["gr-16", "Zagori Cultural Landscape", "Greece", "Epirus", 2023, "Traditional stone villages (Zagorochoria) and arched bridges in the Pindus mountains"],
-    ["gr-17", "Temple of Apollo Epicurius at Bassae", "Greece", "Peloponnese", 1986, "First Greek site inscribed, remote temple designed by Parthenon architect Iktinos"],
-    ["gr-18", "Paleochristian and Byzantine Monuments of Thessalonika", "Greece", "Central Macedonia", 1988, "Rotunda, Hagia Sophia church, and Saint Demetrios mosaics"],
-    ["gr-19", "Sanctuary of Asklepios at Epidaurus", "Greece", "Peloponnese", 1988, "Healing sanctuary with renowned acoustic ancient Greek stone theatre"],
-
-    // --- EGYPT (7 sites - ALL INSCRIBED) ---
-    ["eg-1", "Memphis and its Necropolis – the Pyramid Fields from Giza to Dahshur", "Egypt", "Cairo / Giza", 1979, "Great Pyramids of Khufu, Khafre, Menkaure, and the Great Sphinx"],
-    ["eg-2", "Ancient Thebes with its Necropolis", "Egypt", "Luxor", 1979, "Temples of Karnak, Luxor, and tombs of the Valley of the Kings and Queens"],
-    ["eg-3", "Nubian Monuments from Abu Simbel to Philae", "Egypt", "Aswan", 1979, "Rock-cut sun temples of Ramesses II and Isis rescued during Aswan Dam construction"],
-    ["eg-4", "Historic Cairo", "Egypt", "Cairo", 1979, "City of a Thousand Minarets with historic madrasas, mosques, and Khan el-Khalili"],
-    ["eg-5", "Abu Mena", "Egypt", "Alexandria", 1979, "Early Christian pilgrimage holy city and tomb of Saint Menas in the desert"],
-    ["eg-6", "Saint Catherine Area", "Egypt", "South Sinai", 2002, "Orthodox monastery at the foot of Mount Sinai holding the Burning Bush"],
-    ["eg-7", "Wadi Al-Hitan (Whale Valley)", "Egypt", "Faiyum", 2005, "Desert valley containing pristine fossil skeletons of early ocean whales"],
-
-    // --- PERU (13 sites - ALL INSCRIBED) ---
-    ["pe-1", "Historic Sanctuary of Machu Picchu", "Peru", "Cusco", 1983, "Inca cloud-forest stone citadel set dramatically between Andean peaks"],
-    ["pe-2", "City of Cuzco", "Peru", "Cusco", 1983, "Imperial capital of the Inca Empire with Spanish Baroque colonial churches atop Inca stonework"],
-    ["pe-3", "Chavin (Archaeological Site)", "Peru", "Ancash", 1985, "Pre-Incan ceremonial stone temple center in the high Andes with underground galleries"],
-    ["pe-4", "Huascaran National Park", "Peru", "Ancash", 1985, "Cordillera Blanca mountain range featuring Huascaran, Peru's highest peak (6,768 m)"],
-    ["pe-5", "Chan Chan Archaeological Zone", "Peru", "La Libertad", 1986, "Largest adobe earthen mud city in the Americas, ancient capital of the Chimu kingdom"],
-    ["pe-6", "Manu National Park", "Peru", "Madre de Dios / Cusco", 1987, "Vast Amazonian biodiversity reserve descending from high Andes to tropical rainforest"],
-    ["pe-7", "Historic Centre of Lima", "Peru", "Lima", 1988, "Spanish colonial City of Kings with grand plazas and ornate wooden balconies"],
-    ["pe-8", "Rio Abiseo National Park", "Peru", "San Martin", 1990, "Cloud forest sanctuary preserving yellow-tailed woolly monkey and pre-Inca ruins"],
-    ["pe-9", "Lines and Geoglyphs of Nasca and Palpa", "Peru", "Ica", 1994, "Enormous desert drawings of animals and geometry etched into arid coastal plateaus"],
-    ["pe-10", "Historical Centre of the City of Arequipa", "Peru", "Arequipa", 2000, "White volcanic sillar stone architecture framed by Misti volcano"],
-    ["pe-11", "Caral-Supe Sacred City", "Peru", "Lima Region", 2009, "5,000-year-old monumental earthen pyramid city, oldest known civilization in the Americas"],
-    ["pe-12", "Qhapaq Ñan, Andean Road System", "Peru", "Andes (Multi-country)", 2014, "Extensive Inca communication and trade road network across the Andes"],
-    ["pe-13", "Chankillo Archaeoastronomical Complex", "Peru", "Ancash", 2021, "Thirteen stone towers marking solar calendar positions along a desert ridge"],
-
-    // --- MEXICO (35 sites) ---
-    ["mx-1", "Pre-Hispanic City of Chichen-Itza", "Mexico", "Yucatán", 1988, "Mayan-Toltec center dominated by the El Castillo equinox pyramid"],
-    ["mx-2", "Pre-Hispanic City of Teotihuacan", "Mexico", "State of Mexico", 1987, "Monumental holy city of the Sun and Moon Pyramids and Avenue of the Dead"],
-    ["mx-3", "Historic Centre of Mexico City and Xochimilco", "Mexico", "Mexico City", 1987, "Aztec Tenochtitlan ruins, Zócalo cathedral, and ancient floating gardens (chinampas)"],
-    ["mx-4", "Historic Centre of Oaxaca and Monte Albán", "Mexico", "Oaxaca", 1987, "Zapotec mountaintop ceremonial terraces overlooking colonial baroque Oaxaca"],
-    ["mx-5", "Historic Centre of Puebla", "Mexico", "Puebla", 1987, "Spanish colonial city renowned for Talavera ceramic tile facades"],
-    ["mx-6", "Historic Town of Guanajuato and Adjacent Mines", "Mexico", "Guanajuato", 1988, "Subterranean road tunnels, pastel baroque streets, and rich silver mines"],
-    ["mx-7", "Pre-Hispanic City and National Park of Palenque", "Mexico", "Chiapas", 1987, "Classical Mayan forest temple city and tomb of King Pakal the Great"],
-    ["mx-8", "Sian Ka'an", "Mexico", "Quintana Roo", 1987, "Coastal tropical biosphere reserve of coral reefs, mangroves, and cenotes"],
-    ["mx-9", "Historic Centre of Morelia", "Mexico", "Michoacán", 1991, "Pink quarry stone colonial architecture and sweeping monumental aqueduct"],
-    ["mx-10", "El Tajin, Pre-Hispanic City", "Mexico", "Veracruz", 1992, "Classic pre-Columbian center famed for the 365-niche Pyramid of the Niches"],
-    ["mx-11", "Historic Centre of Zacatecas", "Mexico", "Zacatecas", 1993, "High-altitude silver mining town with churrigueresque sandstone cathedral"],
-    ["mx-12", "Rock Paintings of the Sierra de San Francisco", "Mexico", "Baja California Sur", 1993, "Monumental prehistoric murals of human figures and animals in desert caves"],
-    ["mx-13", "Whale Sanctuary of El Vizcaino", "Mexico", "Baja California Sur", 1993, "Coastal lagoons where grey whales migrate from the Arctic to mate and calf"],
-    ["mx-14", "Earliest 16th-Century Monasteries on Popocatepetl", "Mexico", "Morelos / Puebla", 1994, "Open-air chapel monasteries built for early indigenous conversion"],
-    ["mx-15", "Pre-Hispanic Town of Uxmal", "Mexico", "Yucatán", 1996, "Puuc architectural style masterworks including Pyramid of the Magician"],
-    ["mx-16", "Historic Monuments Zone of Querétaro", "Mexico", "Querétaro", 1996, "Colonial geometric grid town and majestic stone arches aqueduct"],
-    ["mx-17", "Hospicio Cabañas, Guadalajara", "Mexico", "Jalisco", 1997, "Neoclassical hospital complex home to monumental murals by José Clemente Orozco"],
-    ["mx-18", "Historic Monuments Zone of Tlacotalpan", "Mexico", "Veracruz", 1998, "Spanish Caribbean river port town with wide colonnades and brightly colored houses"],
-    ["mx-19", "Archaeological Zone of Paquimé, Casas Grandes", "Mexico", "Chihuahua", 1998, "Adobe mud multi-story apartment village blending Mesoamerican traditions"],
-    ["mx-20", "Historic Fortified Town of Campeche", "Mexico", "Campeche", 1999, "Hexagonal walled colonial Caribbean port defending against pirate raids"],
-    ["mx-21", "Archaeological Monuments Zone of Xochicalco", "Mexico", "Morelos", 1999, "Fortified post-Teotihuacan hilltop civic center and Feathered Serpent Temple"],
-    ["mx-22", "Maya City and Tropical Forests of Calakmul", "Mexico", "Campeche", 2002, "Powerful Mayan jungle metropolis surrounded by the Petén forest biome"],
-    ["mx-23", "Franciscan Missions in Sierra Gorda of Querétaro", "Mexico", "Querétaro", 2003, "Ornate mestizo baroque mission facades built by Junípero Serra"],
-    ["mx-24", "Luis Barragán House and Studio", "Mexico", "Mexico City", 2004, "Pioneering modern architecture fusing traditional Mexican light, color, and water"],
-    ["mx-25", "Islands and Protected Areas of the Gulf of California", "Mexico", "Baja / Sonora", 2005, "The 'Aquarium of the World' holding the endangered vaquita marina porpoise"],
-    ["mx-26", "Agave Landscape and Facilities of Tequila", "Mexico", "Jalisco", 2006, "Blue agave fields and historic distilleries cultivating Mexico's national spirit"],
-    ["mx-27", "Central University City Campus of the UNAM", "Mexico", "Mexico City", 2007, "Monumental modern university campus with vibrant mosaic murals by Diego Rivera"],
-    ["mx-28", "Monarch Butterfly Biosphere Reserve", "Mexico", "Michoacán", 2008, "Oyamel fir forests where millions of monarch butterflies overwinter from Canada"],
-    ["mx-29", "San Miguel de Allende and Sanctuary of Atotonilco", "Mexico", "Guanajuato", 2008, "Baroque hillside town and 'Sistine Chapel of Mexico' pilgrimage church"],
-    ["mx-30", "Camino Real de Tierra Adentro", "Mexico", "Multi-region", 2010, "Silver route extending from Mexico City to Texas over three centuries"],
-    ["mx-31", "Prehistoric Caves of Yagul and Mitla in Oaxaca", "Mexico", "Oaxaca", 2010, "Caves revealing 10,000-year-old domesticated squash and maize seeds"],
-    ["mx-32", "El Pinacate and Gran Desierto de Altar", "Mexico", "Sonora", 2013, "Massive volcanic field with giant maar craters and shifting star sand dunes"],
-    ["mx-33", "Aqueduct of Padre Tembleque", "Mexico", "Hidalgo / Mexico State", 2015, "16th-century arcade bridge spanning across desert ravines"],
-    ["mx-34", "Archipiélago de Revillagigedo", "Mexico", "Colima (Pacific)", 2016, "Volcanic oceanic islands teeming with giant mantas, sharks, and humpback whales"],
-    ["mx-35", "Tehuacán-Cuicatlán Valley", "Mexico", "Puebla / Oaxaca", 2018, "Dense columnar cactus forests and birthplace of Mesoamerican agriculture"],
-
-    // --- AUSTRALIA (20 sites - ALL INSCRIBED) ---
-    ["au-1", "Great Barrier Reef", "Australia", "Queensland", 1981, "World's largest coral reef ecosystem stretching over 2,300 km"],
-    ["au-2", "Kakadu National Park", "Australia", "Northern Territory", 1981, "Aboriginal rock art galleries and tropical wetlands with saltwater crocodiles"],
-    ["au-3", "Willandra Lakes Region", "Australia", "New South Wales", 1981, "Pleistocene dried lakebeds where 40,000-year-old Mungo Man was discovered"],
-    ["au-4", "Lord Howe Island Group", "Australia", "New South Wales (Tasman)", 1982, "Isolated volcanic island with the world's southernmost coral reef"],
-    ["au-5", "Tasmanian Wilderness", "Australia", "Tasmania", 1982, "Gondwanan ancient temperate rainforests, rugged peaks, and wild rivers"],
-    ["au-6", "Gondwana Rainforests of Australia", "Australia", "New South Wales / QLD", 1986, "Ancient caldera subtropical rainforests holding living fossil plant lineages"],
-    ["au-7", "Uluṟu-Kata Tjuṯa National Park", "Australia", "Northern Territory", 1987, "Sacred red sandstone monolith and domed Kata Tjuta rock formations"],
-    ["au-8", "Wet Tropics of Queensland", "Australia", "Queensland", 1988, "Ancient tropical rainforests descending to meeting points with the coral reef"],
-    ["au-9", "Shark Bay, Western Australia", "Australia", "Western Australia", 1991, "Living fossil marine stromatolites and world's largest seagrass meadows"],
-    ["au-10", "K'gari (Fraser Island)", "Australia", "Queensland", 1992, "World's largest sand island with perched freshwater dune lakes"],
-    ["au-11", "Australian Fossil Mammal Sites (Riversleigh / Naracoorte)", "Australia", "QLD / South Australia", 1994, "Caves preserving evolutionary history of Australia's unique marsupials"],
-    ["au-12", "Heard and McDonald Islands", "Australia", "Sub-Antarctic", 1997, "Only volcanically active sub-Antarctic islands free of introduced species"],
-    ["au-13", "Macquarie Island", "Australia", "Tasmania (Southern Ocean)", 1997, "Only place on Earth where rocks from the mantle are exposed above sea level"],
-    ["au-14", "Greater Blue Mountains Area", "Australia", "New South Wales", 2000, "Vast sandstone canyon wilderness dominated by diverse eucalyptus species"],
-    ["au-15", "Purnululu National Park", "Australia", "Western Australia", 2003, "Beehive-striped sandstone cone karst formations in the Bungle Bungle Range"],
-    ["au-16", "Royal Exhibition Building and Carlton Gardens", "Australia", "Victoria", 2004, "Historic 1880 Great Hall built for the international exhibition movement"],
-    ["au-17", "Sydney Opera House", "Australia", "New South Wales", 2007, "Jørn Utzon's 20th-century architectural shell masterpiece on Sydney harbour"],
-    ["au-18", "Australian Convict Sites", "Australia", "Multi-state", 2010, "Eleven penal sites documenting British transportation of 166,000 convicts"],
-    ["au-19", "Ningaloo Coast", "Australia", "Western Australia", 2011, "Fringing coral reef where whale sharks aggregate alongside arid limestone coast"],
-    ["au-20", "Budj Bim Cultural Landscape", "Australia", "Victoria", 2019, "Aboriginal aquaculture system of stone channels to harvest short-finned eels"],
-
-    // --- BRAZIL (23 sites - ALL INSCRIBED) ---
-    ["br-1", "Iguaçu National Park", "Brazil", "Paraná", 1986, "Spectacular 2.7 km semicircular falls plunging into the Devil's Throat gorge"],
-    ["br-2", "Rio de Janeiro: Carioca Landscapes", "Brazil", "Rio de Janeiro", 2012, "Corcovado Christ statue, Sugarloaf Mountain, and Copacabana shoreline"],
-    ["br-3", "Historic Town of Ouro Preto", "Brazil", "Minas Gerais", 1980, "Gold-rush boomtown filled with Aleijadinho's baroque churches"],
-    ["br-4", "Historic Centre of Olinda", "Brazil", "Pernambuco", 1982, "Colonial sugar-trade capital with pastel hillside churches facing the Atlantic"],
-    ["br-5", "Jesuit Missions of the Guaranis", "Brazil", "Rio Grande do Sul", 1983, "San Ignacio Miní and São Miguel das Missões ruins shared with Argentina"],
-    ["br-6", "Historic Centre of Salvador de Bahia", "Brazil", "Bahia", 1985, "First capital of Brazil with Pelourinho cobblestone colonial streets"],
-    ["br-7", "Sanctuary of Bom Jesus do Congonhas", "Brazil", "Minas Gerais", 1985, "Rococo pilgrimage basilica adorned with 12 soapstone prophet statues"],
-    ["br-8", "Brasilia", "Brazil", "Federal District", 1987, "Oscar Niemeyer and Lúcio Costa's visionary airplane-shaped planned modernist capital"],
-    ["br-9", "Serra da Capivara National Park", "Brazil", "Piauí", 1991, "Thousands of prehistoric cave rock art depictions in arid caatinga canyons"],
-    ["br-10", "Historic Centre of São Luís", "Brazil", "Maranhão", 1997, "Colonial city famed for Portuguese hand-painted blue ceramic tile facades"],
-    ["br-11", "Historic Centre of the Town of Diamantina", "Brazil", "Minas Gerais", 1999, "Baroque diamond-mining town nestled among barren rocky crags"],
-    ["br-12", "Discovery Coast Atlantic Forest Reserves", "Brazil", "Bahia / Espírito Santo", 1999, "Endangered Atlantic rainforest where Portuguese explorers first made landfall in 1500"],
-    ["br-13", "Atlantic Forest South-East Reserves", "Brazil", "São Paulo / Paraná", 1999, "Mountainous rainforest corridors harboring golden lion tamarins"],
-    ["br-14", "Central Amazon Conservation Complex (Jaú)", "Brazil", "Amazonas", 2000, "Vast blackwater flooded forests and Amazon basin biodiversity sanctuary"],
-    ["br-15", "Pantanal Conservation Area", "Brazil", "Mato Grosso", 2000, "World's largest tropical wetland ecosystem home to jaguars and hyacinth macaws"],
-    ["br-16", "Fernando de Noronha and Atol das Rocas", "Brazil", "Pernambuco (Atlantic)", 2001, "Tropical archipelago breeding sanctuary for spinner dolphins and sea turtles"],
-    ["br-17", "Cerrado Protected Areas: Chapada dos Veadeiros and Emas", "Brazil", "Goiás", 2001, "Ancient savannas, crystal waterfalls, and rare giant anteater habitat"],
-    ["br-18", "Historic Centre of Goiás", "Brazil", "Goiás", 2001, "Preserved 18th-century mining settlement adapted to local clay conditions"],
-    ["br-19", "São Francisco Square in São Cristóvão", "Brazil", "Sergipe", 2010, "Colonial square harmonizing Franciscan convent and municipal architecture"],
-    ["br-20", "Valongo Wharf Archaeological Site", "Brazil", "Rio de Janeiro", 2017, "Old stone wharf where nearly one million enslaved Africans arrived in the Americas"],
-    ["br-21", "Paraty and Ilha Grande", "Brazil", "Rio de Janeiro", 2019, "Coastal gold-trail colonial town nestled between mountains and island waters"],
-    ["br-22", "Sítio Roberto Burle Marx", "Brazil", "Rio de Janeiro", 2021, "Visionary estate of modernist landscape architect who transformed tropical gardening"],
-    ["br-23", "Lençóis Maranhenses National Park", "Brazil", "Maranhão", 2024, "Rolling white sand dunes filled with seasonal freshwater crystal rain lagoons"],
-
-    // --- INDIA (30 sites) ---
-    ["in-1", "Taj Mahal", "India", "Uttar Pradesh", 1983, "Mughal Emperor Shah Jahan's white marble monument to eternal love in Agra"],
-    ["in-2", "Ajanta Caves", "India", "Maharashtra", 1983, "Buddhist rock-cut cave monuments adorned with ancient tempera mural paintings"],
-    ["in-3", "Ellora Caves", "India", "Maharashtra", 1983, "Kailash temple monolithic rock-cut chariot temple carved from single cliff"],
-    ["in-4", "Agra Fort", "India", "Uttar Pradesh", 1983, "Red sandstone imperial fortified residence of the Great Mughal dynasty"],
-    ["in-5", "Sun Temple, Konârak", "India", "Odisha", 1984, "Colossal stone chariot temple of the sun god Surya with 24 carved stone wheels"],
-    ["in-6", "Group of Monuments at Mahabalipuram", "India", "Tamil Nadu", 1984, "Shore Temple and monolithic rock-cut rathas carved into Coromandel coastline"],
-    ["in-7", "Kaziranga National Park", "India", "Assam", 1985, "Brahmaputra grasslands holding the world's largest great one-horned rhino population"],
-    ["in-8", "Manas Wildlife Sanctuary", "India", "Assam", 1985, "Himalayan foothills reserve sheltering endangered pygmy hog and golden langur"],
-    ["in-9", "Keoladeo National Park", "India", "Rajasthan", 1985, "Man-made wetland duck-hunting reserve turned premier avian sanctuary"],
-    ["in-10", "Churches and Convents of Goa", "India", "Goa", 1986, "Portuguese colonial Manueline basilicas holding the relics of St Francis Xavier"],
-    ["in-11", "Khajuraho Group of Monuments", "India", "Madhya Pradesh", 1986, "Chandela dynasty nagara-style temples renowned for intricate erotic sculptures"],
-    ["in-12", "Group of Monuments at Hampi", "India", "Karnataka", 1986, "Spectacular ruins of the grand Vijayanagara Empire across boulder-strewn hills"],
-    ["in-13", "Fatehpur Sikri", "India", "Uttar Pradesh", 1986, "Emperor Akbar's short-lived red sandstone royal capital and Buland Darwaza gate"],
-    ["in-14", "Group of Monuments at Pattadakal", "India", "Karnataka", 1987, "Chalukya dynasty architectural synthesis of northern and southern temple styles"],
-    ["in-15", "Elephanta Caves", "India", "Maharashtra", 1987, "Rock-cut island cave sculptures dedicated to Shiva, including the Trimurti"],
-    ["in-16", "Great Living Chola Temples", "India", "Tamil Nadu", 1987, "Brihadisvara Temple at Thanjavur celebrating southern Dravidian stone architecture"],
-    ["in-17", "Sundarbans National Park", "India", "West Bengal", 1987, "World's largest mangrove forest delta home to swimming Royal Bengal tigers"],
-    ["in-18", "Nanda Devi and Valley of Flowers National Parks", "India", "Uttarakhand", 1988, "Alpine meadows blanketed in endemic wildflowers below Himalayan glaciated peaks"],
-    ["in-19", "Buddhist Monuments at Sanchi", "India", "Madhya Pradesh", 1989, "Emperor Ashoka's Great Stupa with carved stone torana gateway balustrades"],
-    ["in-20", "Humayun's Tomb, Delhi", "India", "Delhi", 1993, "First garden-tomb on the Indian subcontinent, architectural precursor to the Taj Mahal"],
-    ["in-21", "Qutb Minar and its Monuments, Delhi", "India", "Delhi", 1993, "73-meter fluted red sandstone minaret and non-rusting iron pillar"],
-    ["in-22", "Mountain Railways of India", "India", "Multi-region", 1999, "Darjeeling Himalayan toy train, Nilgiri Mountain Railway, and Kalka-Shimla line"],
-    ["in-23", "Mahabodhi Temple Complex at Bodh Gaya", "India", "Bihar", 2002, "Sacred stone temple marking where the historical Buddha attained enlightenment"],
-    ["in-24", "Rock Shelters of Bhimbetka", "India", "Madhya Pradesh", 2003, "Stone Age rock art drawings spanning 30,000 years inside sandstone bluffs"],
-    ["in-25", "Chhatrapati Shivaji Terminus (Victoria Terminus)", "India", "Maharashtra", 2004, "Victorian Gothic Revival railway terminus fused with traditional Indian themes"],
-    ["in-26", "Red Fort Complex", "India", "Delhi", 2007, "Palace fort of Shahjahanabad, symbol of Indian independence at the Lahori Gate"],
-    ["in-27", "The Jantar Mantar, Jaipur", "India", "Rajasthan", 2010, "18th-century stone astronomical observation instruments including world's largest sundial"],
-    ["in-28", "Western Ghats", "India", "Multi-state", 2012, "Mountain range older than the Himalayas acting as global biological hotspot"],
-    ["in-29", "Hill Forts of Rajasthan", "India", "Rajasthan", 2013, "Six massive Rajput forts including Chittorgarh, Kumbhalgarh, and Amber"],
-    ["in-30", "Rani-ki-Vav (Queen's Stepwell) at Patan", "India", "Gujarat", 2014, "Subterranean seven-level inverted water temple adorned with 500 major sculptures"],
-
-    // --- CANADA (22 sites - ALL INSCRIBED) ---
-    ["ca-1", "L'Anse aux Meadows National Historic Site", "Canada", "Newfoundland and Labrador", 1978, "Only authenticated 11th-century Norse Viking settlement in North America"],
-    ["ca-2", "Nahanni National Park", "Canada", "Northwest Territories", 1978, "Virginia Falls, deep river canyons, and limestone karst caves in subarctic north"],
-    ["ca-3", "Dinosaur Provincial Park", "Canada", "Alberta", 1979, "World's richest collection of Cretaceous dinosaur fossils in badlands topography"],
-    ["ca-4", "Head-Smashed-In Buffalo Jump", "Canada", "Alberta", 1981, "Cliff where indigenous hunters drove bison herds for over 5,500 years"],
-    ["ca-5", "SGang Gwaay", "Canada", "British Columbia", 1981, "Haida village on Anthony Island with weathered carved mortuary totem poles"],
-    ["ca-6", "Wood Buffalo National Park", "Canada", "Alberta / NWT", 1983, "North America's largest national park holding wild wood bison and whooping cranes"],
-    ["ca-7", "Canadian Rocky Mountain Parks", "Canada", "Alberta / BC", 1984, "Banff, Jasper, Yoho, and Kootenay featuring glaciers, lakes, and Burgess Shale"],
-    ["ca-8", "Historic District of Old Québec", "Canada", "Quebec", 1985, "Only fortified colonial city north of Mexico with intact ramparts and Château Frontenac"],
-    ["ca-9", "Gros Morne National Park", "Canada", "Newfoundland and Labrador", 1987, "Tablelands where Earth's mantle is exposed by plate tectonics beside deep fjords"],
-    ["ca-10", "Old Town Lunenburg", "Canada", "Nova Scotia", 1995, "Best surviving British colonial planned wooden settlement with colourful facades"],
-    ["ca-11", "Miguasha National Park", "Canada", "Quebec", 1999, "Devonian fossil site illustrating the evolutionary transition from fish to land vertebrates"],
-    ["ca-12", "Rideau Canal", "Canada", "Ontario", 2007, "Slackwater canal and stone defensive blockhouses built after the War of 1812"],
-    ["ca-13", "Joggins Fossil Cliffs", "Canada", "Nova Scotia", 2008, "Carboniferous fossil cliff exposing the world's earliest reptiles inside fossilized trees"],
-    ["ca-14", "Landscape of Grand Pré", "Canada", "Nova Scotia", 2012, "Acadian dyke marsh agricultural system and memorial of the Acadian deportation"],
-    ["ca-15", "Red Bay Basque Whaling Station", "Canada", "Newfoundland and Labrador", 2013, "16th-century Basque underwater and coastal whale-oil rendering archaeology"],
-    ["ca-16", "Mistaken Point", "Canada", "Newfoundland and Labrador", 2016, "Coastal sea ledges holding 565-million-year-old fossils of the earliest complex life"],
-    ["ca-17", "Pimachiowin Aki", "Canada", "Manitoba / Ontario", 2018, "First Nations boreal forest landscape upholding ancestral 'keeping the land' tradition"],
-    ["ca-18", "Writing-on-Stone / Áísínai'pi", "Canada", "Alberta", 2019, "Milk River sandstone hoodoos carved with sacred Blackfoot rock art petroglyphs"],
-    ["ca-19", "Tr'ondëk-Hwëch'in / Klondike", "Canada", "Yukon", 2023, "Yukon gold rush landscapes coexisting with Indigenous culture and heritage"],
-    ["ca-20", "Anticosti", "Canada", "Quebec", 2023, "Complete marine fossil record of the first mass extinction of animal life"],
-    ["ca-21", "Waterton-Glacier International Peace Park (Canada)", "Canada", "Alberta", 1995, "Shared international Rocky Mountain peace reserve with Montana"],
-    ["ca-22", "Kluane / Tatshenshini-Alsek (Canada)", "Canada", "Yukon / BC", 1979, "Glacial icefields and wild grizzly habitat extending across the US border"],
-
-    // --- MALTA (3 sites - ALL INSCRIBED) ---
-    ["mt-1", "City of Valletta", "Malta", "Valletta", 1980, "Fortified Renaissance city built by the Knights of St. John on Mount Sceberras"],
-    ["mt-2", "Megalithic Temples of Malta", "Malta", "Malta & Gozo", 1980, "Seven prehistoric monumental freestanding stone structures older than Stonehenge"],
-    ["mt-3", "Ħal Saflieni Hypogeum", "Malta", "Paola", 1980, "Underground prehistoric rock-cut burial sanctuary and oracle chamber on three levels"],
-
-    // --- ARGENTINA (12 sites - ALL INSCRIBED) ---
-    ["ar-1", "Los Glaciares National Park", "Argentina", "Santa Cruz", 1981, "Perito Moreno advancing glacier and granite spire peaks of Mount Fitz Roy"],
-    ["ar-2", "Iguazu National Park (Argentine side)", "Argentina", "Misiones", 1984, "Panoramic walkways above the Devil's Throat and subtropical rainforest"],
-    ["ar-3", "Cueva de las Manos, Río Pinturas", "Argentina", "Santa Cruz", 1999, "Cave wall stencils of human hands painted 9,000 years ago in Patagonian canyon"],
-    ["ar-4", "Península Valdés", "Argentina", "Chubut", 1999, "Patagonian marine haven for southern right whales, orcas, and elephant seals"],
-    ["ar-5", "Ischigualasto / Talampaya Natural Parks", "Argentina", "San Juan / La Rioja", 2000, "Desert canyon badlands holding the world's most complete Triassic dinosaur fossils"],
-    ["ar-6", "Jesuit Block and Estancias of Córdoba", "Argentina", "Córdoba", 2000, "Core university and outlying farming estates run by 17th-century Jesuits"],
-    ["ar-7", "Quebrada de Humahuaca", "Argentina", "Jujuy", 2003, "Vibrant mountain gorge route with the Seven-Coloured Hill at Purmamarca"],
-    ["ar-8", "Los Alerces National Park", "Argentina", "Chubut", 2017, "Patagonian Andean lakes and ancient alerce trees living over 3,000 years"],
-    ["ar-9", "ESMA Site Museum – Former Clandestine Detention Centre", "Argentina", "Buenos Aires", 2023, "Naval school that served as detention center during the military dictatorship"],
-    ["ar-10", "Jesuit Missions of the Guaranis (Argentina)", "Argentina", "Misiones", 1984, "San Ignacio Miní red sandstone mission ruins built in the subtropical jungle"],
-    ["ar-11", "Qhapaq Ñan (Argentine section)", "Argentina", "Andes", 2014, "Inca mountain trading routes linking high Andean valleys"],
-    ["ar-12", "The Architectural Work of Le Corbusier (Curutchet House)", "Argentina", "Buenos Aires Province", 2016, "Modernist private clinic and home built by Le Corbusier in La Plata"],
-
-    // --- MOROCCO (9 sites - ALL INSCRIBED) ---
-    ["ma-1", "Medina of Fez", "Morocco", "Fès-Meknès", 1981, "World's largest car-free urban area holding the 9th-century Al Quaraouiyine university"],
-    ["ma-2", "Medina of Marrakesh", "Morocco", "Marrakesh-Safi", 1985, "Jemaa el-Fnaa square, Koutoubia minaret, and traditional red-clay souks"],
-    ["ma-3", "Ksar of Ait-Ben-Haddou", "Morocco", "Drâa-Tafilalet", 1987, "Traditional pre-Saharan earthen mud-brick fortified ksar along trans-Saharan trade route"],
-    ["ma-4", "Historic City of Meknes", "Morocco", "Fès-Meknès", 1996, "Ismailian royal capital surrounded by monumental Bab El-Mansour defensive gates"],
-    ["ma-5", "Archaeological Site of Volubilis", "Morocco", "Fès-Meknès", 1997, "Ancient Roman colonial city famed for intact floor mosaics in fertile plains"],
-    ["ma-6", "Medina of Tétouan", "Morocco", "Tanger-Tetouan-Al Hoceima", 1997, "Andalusian-influenced medina settled by refugees following the Spanish Reconquista"],
-    ["ma-7", "Medina of Essaouira (formerly Mogador)", "Morocco", "Marrakesh-Safi", 2001, "Fortified 18th-century Atlantic port town built to European military principles"],
-    ["ma-8", "Portuguese City of Mazagan (El Jadida)", "Morocco", "Casablanca-Settat", 2004, "Renaissance bastion fortifications and subterranean vaulted cistern"],
-    ["ma-9", "Rabat, Modern Capital and Historic City", "Morocco", "Rabat-Salé-Kénitra", 2012, "Hassan Tower and Kasbah of the Udayas coexisting with French protectorate quarter"],
-
-    // --- PORTUGAL (17 sites - ALL INSCRIBED) ---
-    ["pt-1", "Monastery of the Hieronymites and Tower of Belém", "Portugal", "Lisbon", 1983, "Pinnacle of maritime Manueline Gothic architecture celebrating the Age of Discovery"],
-    ["pt-2", "Monastery of Batalha", "Portugal", "Centro", 1983, "Dominican abbey built to commemorate victory at the Battle of Aljubarrota"],
-    ["pt-3", "Convent of Christ in Tomar", "Portugal", "Centro", 1983, "Templar castle and Manueline chapterhouse window of the Order of Christ"],
-    ["pt-4", "Historic Centre of Évora", "Portugal", "Alentejo", 1986, "Golden age city with Roman Diana temple and Chapel of Bones"],
-    ["pt-5", "Monastery of Alcobaça", "Portugal", "Centro", 1989, "Monumental Cistercian abbey housing the royal tombs of King Pedro and Inês de Castro"],
-    ["pt-6", "Cultural Landscape of Sintra", "Portugal", "Lisbon", 1995, "Fairytale Romanticist Pena Palace, Quinta da Regaleira, and Moorish Castle"],
-    ["pt-7", "Historic Centre of Oporto, Luiz I Bridge", "Portugal", "Norte", 1996, "Ribeira riverfront with iron arch bridge overlooking Port wine lodges"],
-    ["pt-8", "Prehistoric Rock Art in the Côa Valley", "Portugal", "Norte / Centro", 1998, "Open-air Paleolithic animal rock carvings along the Côa River"],
-    ["pt-9", "Laurisilva of Madeira", "Portugal", "Madeira", 1999, "Last surviving primary laurel rainforest covering steep island valleys"],
-    ["pt-10", "Alto Douro Wine Region", "Portugal", "Norte", 2001, "Steep terraced schist valley slopes producing Port wine for over two millennia"],
-    ["pt-11", "Historic Centre of Guimarães", "Portugal", "Norte", 2001, "Cradle of Portuguese national identity where first king Afonso Henriques was born"],
-    ["pt-12", "Pico Island Vineyard Culture", "Portugal", "Azores", 2004, "Network of black volcanic basalt stone currais protecting vines from ocean wind"],
-    ["pt-13", "Garrison Border Town of Elvas and its Fortifications", "Portugal", "Alentejo", 2012, "World's largest dry-ditch bulwarked star fortification complex"],
-    ["pt-14", "University of Coimbra – Alta and Sofia", "Portugal", "Centro", 2013, "Historic hilltop university with Joanina Baroque library founded in 1290"],
-    ["pt-15", "Royal Building of Mafra", "Portugal", "Lisbon", 2019, "Colossal Baroque palace monastery financed by Brazilian gold"],
-    ["pt-16", "Sanctuary of Bom Jesus do Monte in Braga", "Portugal", "Norte", 2019, "Baroque pilgrimage hillside sanctuary with monumental granite zigzag staircase"],
-    ["pt-17", "Town of Angra do Heroismo in the Azores", "Portugal", "Azores", 1983, "Mid-Atlantic port stopover for Spanish and Portuguese fleets from the Indies"],
-
-    // --- TURKEY (21 sites - ALL INSCRIBED) ---
-    ["tr-1", "Historic Areas of Istanbul", "Turkey", "Marmara", 1985, "Hagia Sophia, Blue Mosque, Topkapi Palace, and Theodosian land walls"],
-    ["tr-2", "Göreme National Park and Cappadocia", "Turkey", "Central Anatolia", 1985, "Fairy chimney rock spires, cave churches, and subterranean troglodyte cities"],
-    ["tr-3", "Great Mosque and Hospital of Divriği", "Turkey", "Eastern Anatolia", 1985, "High Anatolian Seljuk stone architecture with intricate bas-relief portal carvings"],
-    ["tr-4", "Hattusha: the Hittite Capital", "Turkey", "Black Sea Region", 1986, "Ancient Hittite empire capital with Lion Gate, Royal Gate, and Yazılıkaya sanctuary"],
-    ["tr-5", "Nemrut Dağ", "Turkey", "Southeastern Anatolia", 1987, "Colossal stone statue heads of gods and King Antiochus I crowning mountain summit"],
-    ["tr-6", "Hierapolis-Pamukkale", "Turkey", "Aegean", 1988, "Glowing white travertine mineral terraces and ancient Greco-Roman thermal spa ruins"],
-    ["tr-7", "Xanthos-Letoon", "Turkey", "Mediterranean", 1988, "Capital of ancient Lycia with rock-cut pillar tombs and multilingual inscriptions"],
-    ["tr-8", "City of Safranbolu", "Turkey", "Black Sea Region", 1994, "Preserved Ottoman timber-and-stucco residential town on the Silk Road caravan route"],
-    ["tr-9", "Archaeological Site of Troy", "Turkey", "Marmara", 1998, "Nine stratigraphic levels of Homeric legend including the Bronze Age Troy VI/VII"],
-    ["tr-10", "Selimiye Mosque and its Social Complex, Edirne", "Turkey", "Marmara", 2011, "Imperial Ottoman masterpiece designed by legendary royal architect Mimar Sinan"],
-    ["tr-11", "Neolithic Site of Çatalhöyük", "Turkey", "Central Anatolia", 2012, "One of the world's earliest agricultural proto-cities with rooftop door entries"],
-    ["tr-12", "Bursa and Cumalıkızık", "Turkey", "Marmara", 2014, "First Ottoman capital illustrating commercial han districts and rural waqf village"],
-    ["tr-13", "Pergamon Multi-Layered Cultural Landscape", "Turkey", "Aegean", 2014, "Hellenistic acropolis with steepest ancient stone theatre and Asklepion sanctuary"],
-    ["tr-14", "Diyarbakır Fortress and Hevsel Gardens", "Turkey", "Southeastern Anatolia", 2015, "Black basalt defensive circuit walls along the Tigris River"],
-    ["tr-15", "Ephesus", "Turkey", "Aegean", 2015, "Library of Celsus, Temple of Artemis, and Terrace Houses on the Aegean coast"],
-    ["tr-16", "Archaeological Site of Ani", "Turkey", "Eastern Anatolia", 2016, "Medieval Armenian 'City of 1001 Churches' perched above the Arpa river canyon"],
-    ["tr-17", "Aphrodisias", "Turkey", "Aegean", 2017, "Greco-Roman city dedicated to Aphrodite famed for marble sculpture school"],
-    ["tr-18", "Göbekli Tepe", "Turkey", "Southeastern Anatolia", 2018, "World's oldest known monumental temple structures featuring T-shaped stone pillars (9600 BC)"],
-    ["tr-19", "Arslantepe Mound", "Turkey", "Eastern Anatolia", 2021, "Mud-brick palace complex yielding early bronze metallurgy and swords"],
-    ["tr-20", "Gordion", "Turkey", "Central Anatolia", 2023, "Ancient capital of Phrygia, legendary seat of King Midas and the Gordian Knot"],
-    ["tr-21", "Wooden Hypostyle Mosques of Medieval Anatolia", "Turkey", "Central Anatolia", 2023, "Seljuk timber column mosques featuring fine hand-carved cedar pillars"],
-
-    // --- NEW ZEALAND (3 sites - ALL INSCRIBED) ---
-    ["nz-1", "Te Wahipounamu – South West New Zealand", "New Zealand", "South Island", 1990, "Fjords, glaciated mountains, and ancient southern beech forests"],
-    ["nz-2", "Tongariro National Park", "New Zealand", "North Island", 1990, "Active volcanic peaks sacred to Maori cultural traditions"],
-    ["nz-3", "New Zealand Sub-Antarctic Islands", "New Zealand", "Southern Ocean", 1998, "Five isolated island groups teeming with endemic penguins and albatrosses"],
-
-    // --- SWITZERLAND (13 sites - ALL INSCRIBED) ---
-    ["ch-1", "Old City of Berne", "Switzerland", "Bern", 1983, "Aare river peninsula medieval city preserved with 6 km of limestone arcades"],
-    ["ch-2", "Convent of St Gall", "Switzerland", "St. Gallen", 1983, "Carolingian monastery featuring one of the world's richest medieval libraries"],
-    ["ch-3", "Benedictine Convent of Saint John at Müstair", "Switzerland", "Graubünden", 1983, "Exceptional series of Carolingian figurative wall frescoes dating to 800 AD"],
-    ["ch-4", "Three Castles of Bellinzona", "Switzerland", "Ticino", 2000, "Only surviving example of medieval military architecture along the Alpine passes"],
-    ["ch-5", "Swiss Alps Jungfrau-Aletsch", "Switzerland", "Bern / Valais", 2001, "Great Aletsch Glacier, the longest glacier in Eurasia, flanked by Eiger and Jungfrau"],
-    ["ch-6", "Monte San Giorgio", "Switzerland", "Ticino", 2003, "Fossil-rich Triassic marine limestone yielding pristine prehistoric reptile fauna"],
-    ["ch-7", "Lavaux, Vineyard Terraces", "Switzerland", "Vaud", 2007, "Stone-walled wine terraces climbing steeply above Lake Geneva"],
-    ["ch-8", "Swiss Tectonic Arena Sardona", "Switzerland", "Glarus", 2008, "Exceptional mountain thrust fault where older rocks were shoved over younger strata"],
-    ["ch-9", "La Chaux-de-Fonds / Le Locle, Watchmaking Town Planning", "Switzerland", "Neuchâtel", 2009, "Urban grid designed specifically to optimize natural light for artisan watchmakers"],
-    ["ch-10", "Rhaetian Railway in Albula / Bernina (Swiss section)", "Switzerland", "Graubünden", 2008, "Landwasser Viaduct and engineering triumph traversing transalpine passes"],
-    ["ch-11", "Prehistoric Pile Dwellings (Swiss section)", "Switzerland", "Multi-canton", 2011, "Lakeshore stilt dwellings dating back to 5000 BC"],
-    ["ch-12", "The Architectural Work of Le Corbusier (Villa Le Lac & Clarté)", "Switzerland", "Vaud / Geneva", 2016, "Early modernist residential works designed by Le Corbusier"],
-    ["ch-13", "Ancient and Primeval Beech Forests (Swiss section)", "Switzerland", "Ticino", 2021, "Intact post-glacial European beech forests in Bettlachstock and Lodano"],
-
-    // --- SOUTH KOREA (16 sites - ALL INSCRIBED) ---
-    ["kr-1", "Haeinsa Temple Janggyeong Panjeon", "South Korea", "Gyeongsangnam-do", 1995, "Depository housing the Tripitaka Koreana (81,258 wooden printing blocks)"],
-    ["kr-2", "Jongmyo Shrine", "South Korea", "Seoul", 1995, "Confucian royal ancestral shrine dedicated to the Joseon dynasty kings"],
-    ["kr-3", "Seokguram Grotto and Bulguksa Temple", "South Korea", "Gyeongsangbuk-do", 1995, "Eighth-century granite monumental Buddha gazing out over the East Sea"],
-    ["kr-4", "Changdeokgung Palace Complex", "South Korea", "Seoul", 1997, "Principal Joseon royal palace harmonized with natural topography and Secret Garden"],
-    ["kr-5", "Hwaseong Fortress", "South Korea", "Gyeonggi-do", 1997, "Eighteenth-century scientific defensive fortress wall built by King Jeongjo in Suwon"],
-    ["kr-6", "Gyeongju Historic Areas", "South Korea", "Gyeongsangbuk-do", 2000, "Capital of the ancient Silla kingdom with Cheomseongdae observatory and royal mounds"],
-    ["kr-7", "Gochang, Hwasun and Ganghwa Dolmen Sites", "South Korea", "Multi-region", 2000, "Highest concentration of megalithic stone dolmen burial tombs in the world"],
-    ["kr-8", "Jeju Volcanic Island and Lava Tubes", "South Korea", "Jeju", 2007, "Hallasan shield volcano, Seongsan sunrise crater, and Geomunoreum lava caves"],
-    ["kr-9", "Royal Tombs of the Joseon Dynasty", "South Korea", "Multi-region", 2009, "Forty mounds constructed according to Confucian and geomantic principles"],
-    ["kr-10", "Historic Villages of Korea: Hahoe and Yangdong", "South Korea", "Gyeongsangbuk-do", 2010, "Clan villages preserving aristocratic Joseon lineage culture and thatch houses"],
-    ["kr-11", "Namhansanseong", "South Korea", "Gyeonggi-do", 2014, "Emergency mountain fortified capital capable of accommodating 4,000 residents"],
-    ["kr-12", "Baekje Historic Areas", "South Korea", "Chungcheong / Jeolla", 2015, "Fortresses, tombs, and temples of the ancient Baekje kingdom in Buyeo and Gongju"],
-    ["kr-13", "Sansa, Buddhist Mountain Monasteries in Korea", "South Korea", "Multi-region", 2018, "Seven secluded mountain temples practicing continuous daily Seon rituals"],
-    ["kr-14", "Seowon, Korean Neo-Confucian Academies", "South Korea", "Multi-region", 2019, "Nine academies dedicated to learning and memorializing Joseon philosophers"],
-    ["kr-15", "Getbol, Korean Tidal Flats", "South Korea", "Yellow Sea", 2021, "Vast coastal mudflats supporting millions of migrating migratory shorebirds"],
-    ["kr-16", "Gaya Tumuli", "South Korea", "Gyeongsang / Jeolla", 2023, "Mounded burial cemeteries of the ancient Gaya Confederacy (1st-6th centuries)"],
-
-    // --- NETHERLANDS (13 sites - ALL INSCRIBED) ---
-    ["nl-1", "Schokland and Surroundings", "Netherlands", "Flevoland", 1995, "Former Zuiderzee island reclaimed from the sea illustrating hydraulic heritage"],
-    ["nl-2", "Defence Line of Amsterdam (Stelling van Amsterdam)", "Netherlands", "North Holland", 1996, "Ring of 45 forts engineered with an ingenious water inundation system"],
-    ["nl-3", "Mill Network at Kinderdijk-Elshout", "Netherlands", "South Holland", 1997, "Nineteen historic 18th-century drainage windmills draining the Alblasserwaard"],
-    ["nl-4", "Historic Area of Willemstad, Curaçao", "Netherlands", "Curaçao", 1997, "Dutch Caribbean trading port featuring pastel Dutch colonial gable architecture"],
-    ["nl-5", "Ir.D.F. Woudagemaal (D.F. Wouda Steam Pumping Station)", "Netherlands", "Friesland", 1998, "World's largest operational coal-fired steam pumping station, opened in 1920"],
-    ["nl-6", "Droogmakerij de Beemster (Beemster Polder)", "Netherlands", "North Holland", 1999, "First reclaimed polder laid out in a strict Renaissance mathematical landscape grid"],
-    ["nl-7", "Rietveld Schröder House", "Netherlands", "Utrecht", 2000, "Manifesto of De Stijl modern architecture designed by Gerrit Rietveld in 1924"],
-    ["nl-8", "Wadden Sea (Dutch section)", "Netherlands", "North Sea", 2009, "World's largest unbroken intertidal sand and mudflat ecosystem"],
-    ["nl-9", "Seventeenth-Century Canal Ring Area of Amsterdam", "Netherlands", "North Holland", 2010, "Concentric network of urban canals and merchant residences on the Singelgracht"],
-    ["nl-10", "Van Nellefabriek", "Netherlands", "South Holland", 2014, "Modernist steel-and-glass factory icon of 20th-century industrial architecture"],
-    ["nl-11", "Colonies of Benevolence (Dutch section)", "Netherlands", "Drenthe", 2021, "Nineteenth-century agrarian social reform colonies established to reduce urban poverty"],
-    ["nl-12", "Frontiers of the Roman Empire – Lower German Limes", "Netherlands", "Utrecht / South Holland", 2021, "Roman frontier boundary fortifications along the Lower Rhine"],
-    ["nl-13", "Eise Eisinga Planetarium", "Netherlands", "Friesland", 2023, "Oldest continuously operating mechanical astronomical ceiling planetarium, built 1781"],
-
-    // --- SWEDEN (15 sites - ALL INSCRIBED) ---
-    ["se-1", "Royal Domain of Drottningholm", "Sweden", "Stockholm", 1991, "Royal residence on Lake Mälaren featuring 18th-century court theatre and Chinese pavilion"],
-    ["se-2", "Birka and Hovgården", "Sweden", "Stockholm", 1993, "Viking trading hub on Björkö island occupied during the 8th to 10th centuries"],
-    ["se-3", "Engelsberg Ironworks", "Sweden", "Västmanland", 1993, "Best-preserved 17th- and 18th-century Swedish blast furnace and iron forge"],
-    ["se-4", "Rock Carvings in Tanum", "Sweden", "Västra Götaland", 1994, "Extensive Bronze Age rock art petroglyphs depicting ships, warriors, and rituals"],
-    ["se-5", "Skogskyrkogården (Woodland Cemetery)", "Sweden", "Stockholm", 1994, "Landscape cemetery designed by Asplund and Lewerentz integrating pines and tombs"],
-    ["se-6", "Hanseatic Town of Visby", "Sweden", "Gotland", 1995, "Walled Baltic trading city preserved with 3.4 km stone ramparts and ruin churches"],
-    ["se-7", "Church Town of Gammelstad, Luleå", "Sweden", "Norrbotten", 1996, "Over 400 wooden church cottages built for distant parishioners attending Sunday mass"],
-    ["se-8", "Laponian Area", "Sweden", "Norrbotten", 1996, "Arctic mountain wilderness inhabited by indigenous Sámi reindeer-herding communities"],
-    ["se-9", "Naval Port of Karlskrona", "Sweden", "Blekinge", 1998, "Planned naval base built by King Charles XI in 1680 to control the Baltic Sea"],
-    ["se-10", "Agricultural Landscape of Southern Öland", "Sweden", "Kalmar", 2000, "Limestone Stora Alvaret plateau with pastoral grazing practices dating to Iron Age"],
-    ["se-11", "High Coast / Kvarken Archipelago (Swedish section)", "Sweden", "Västernorrland", 2000, "Rapid post-glacial land uplift rising 285 m from the Gulf of Bothnia"],
-    ["se-12", "Mining Area of the Great Copper Mountain in Falun", "Sweden", "Dalarna", 2001, "Great Pit open-cast copper mine that supplied two-thirds of Europe's copper"],
-    ["se-13", "Grimeton Radio Station, Varberg", "Sweden", "Halland", 2004, "Only operational transatlantic Alexanderson alternator radio transmitter from the 1920s"],
-    ["se-14", "Struve Geodetic Arc (Swedish section)", "Sweden", "Norrbotten", 2005, "Triangulation measurement survey points determining the exact size and shape of Earth"],
-    ["se-15", "Decorated Farmhouses of Hälsingland", "Sweden", "Gävleborg", 2012, "Large timber farmhouses decorated with festive folk art wall murals and stencils"],
-
-    // --- POLAND (17 sites - ALL INSCRIBED) ---
-    ["pl-1", "Historic Centre of Kraków", "Poland", "Lesser Poland", 1978, "Rynek Główny market square, Cloth Hall, Wawel Royal Castle, and St Mary's Basilica"],
-    ["pl-2", "Wieliczka and Bochnia Royal Salt Mines", "Poland", "Lesser Poland", 1978, "Thirteenth-century subterranean salt mine featuring Chapel of St Kinga carved from rock salt"],
-    ["pl-3", "Auschwitz Birkenau Nazi Concentration Camp", "Poland", "Lesser Poland", 1979, "Preserved barracks and railway ramp honoring victims of the Holocaust"],
-    ["pl-4", "Białowieża Forest (Polish section)", "Poland", "Podlaskie", 1979, "Last primeval lowland European forest harboring free-ranging wild European bison"],
-    ["pl-5", "Historic Centre of Warsaw", "Poland", "Masovia", 1980, "Remarkable post-WWII reconstruction of Old Town palaces, churches, and market place"],
-    ["pl-6", "Old City of Zamość", "Poland", "Lublin", 1992, "Renaissance 'ideal city' planned by Italian architect Bernardo Morando in 1580"],
-    ["pl-7", "Castle of the Teutonic Order in Malbork", "Poland", "Pomerania", 1997, "World's largest brick Gothic castle fortress built on the Nogat river by Teutonic Knights"],
-    ["pl-8", "Medieval Town of Toruń", "Poland", "Kuyavia-Pomerania", 1997, "Birthplace of astronomer Nicolaus Copernicus with pristine Brick Gothic merchant houses"],
-    ["pl-9", "Kalwaria Zebrzydowska Architectural Landscape", "Poland", "Lesser Poland", 1999, "Mannerist pilgrimage park landscaped with 42 symbolic Calvary chapels"],
-    ["pl-10", "Churches of Peace in Jawor and Świdnica", "Poland", "Lower Silesia", 2001, "Largest half-timbered timber-and-clay Protestant churches in Europe, built after 1648"],
-    ["pl-11", "Wooden Churches of Southern Little Poland", "Poland", "Lesser Poland", 2003, "Six medieval horizontal log-cabin Gothic Catholic churches"],
-    ["pl-12", "Muskauer Park / Park Mużakowski (Polish section)", "Poland", "Lubusz", 2004, "Pioneering European landscape park created along the Lusatian Neisse by Prince Pückler"],
-    ["pl-13", "Centennial Hall in Wrocław", "Poland", "Lower Silesia", 2006, "Max Berg's reinforced concrete dome masterpiece engineered in 1913"],
-    ["pl-14", "Wooden Tserkvas of the Carpathian Region (Polish section)", "Poland", "Subcarpathia", 2013, "Sixteen corner-timbered Orthodox wooden tserkvas built by Boyko and Lemko communities"],
-    ["pl-15", "Tarnowskie Góry Lead-Silver-Zinc Mine", "Poland", "Silesia", 2017, "Extensive underground mining galleries and hydraulic water drainage system"],
-    ["pl-16", "Krzemionki Prehistoric Striped Flint Mining Region", "Poland", "Świętokrzyskie", 2019, "Neolithic underground flint extraction shafts and chambers dating to 3900 BC"],
-    ["pl-17", "Ancient and Primeval Beech Forests (Polish section)", "Poland", "Subcarpathia", 2021, "Pristine beech stands in Bieszczady National Park"],
-
-    // --- NORWAY (8 sites - ALL INSCRIBED) ---
-    ["no-1", "Urnes Stave Church", "Norway", "Vestland", 1979, "Oldest surviving wooden stave church with exquisite Viking animal-style woodcarvings"],
-    ["no-2", "Bryggen", "Norway", "Vestland", 1979, "Historic Hanseatic wooden trading wharves along the Bergen harbor front"],
-    ["no-3", "Røros Mining Town and the Circumference", "Norway", "Trøndelag", 1980, "Historic high-mountain copper mining settlement built with pitch-coated log houses"],
-    ["no-4", "Rock Art of Alta", "Norway", "Finnmark", 1985, "Prehistoric petroglyph panels on the shores of Alta Fjord dating from 4200 to 500 BC"],
-    ["no-5", "Vegaøyan – The Vega Archipelago", "Norway", "Nordland", 2004, "Sub-Arctic islands illustrating centuries of sustainable eider-down harvesting"],
-    ["no-6", "Struve Geodetic Arc (Norwegian section)", "Norway", "Finnmark", 2005, "Survey meridian arc meridian marker points terminating at Fuglenes, Hammerfest"],
-    ["no-7", "West Norwegian Fjords – Geirangerfjord and Nærøyfjord", "Norway", "Møre og Romsdal / Vestland", 2005, "Dramatic narrow fjords with sheer crystalline rock walls and waterfalls"],
-    ["no-8", "Rjukan-Notodden Industrial Heritage Site", "Norway", "Telemark", 2015, "Hydroelectric power plants and nitrogen fertilizer factories engineered by Norsk Hydro"],
-
-    // --- FINLAND (7 sites - ALL INSCRIBED) ---
-    ["fi-1", "Fortress of Suomenlinna", "Finland", "Uusimaa", 1991, "Maritime sea fortress spanning six islands defending Helsinki harbor since 1748"],
-    ["fi-2", "Old Rauma", "Finland", "Satakunta", 1991, "Largest unified wooden town in the Nordic countries with 600 painted timber houses"],
-    ["fi-3", "Petäjävesi Old Church", "Finland", "Central Finland", 1994, "Log-built Lutheran country church combining Gothic architectural forms with log construction"],
-    ["fi-4", "Verla Groundwood and Board Mill", "Finland", "Kymenlaakso", 1996, "Rural 19th-century water-powered wood-pulp and cardboard mill complex"],
-    ["fi-5", "Bronze Age Burial Site of Sammallahdenmäki", "Finland", "Satakunta", 1999, "Over thirty granite stone burial cairns perched on a rocky ridge"],
-    ["fi-6", "Kvarken Archipelago (Finnish section)", "Finland", "Ostrobothnia", 2000, "Shallow moraine archipelago displaying rapid post-glacial crustal rebound"],
-    ["fi-7", "Struve Geodetic Arc (Finnish section)", "Finland", "Multi-region", 2005, "Triangulation stations across Finland including the Oravivuori triangulation point"]
+    // Asia & Oceania
+    { code: "RU", country: "Russia", shape: "oval", cx: 720, cy: 105, rx: 50, ry: 18 },
+    { code: "CN", country: "China", shape: "oval", cx: 785, cy: 195, rx: 28, ry: 18 },
+    { code: "IN", country: "India", shape: "oval", cx: 715, cy: 260, rx: 17, ry: 20 },
+    { code: "JP", country: "Japan", shape: "oval", cx: 885, cy: 190, rx: 9, ry: 17 },
+    { code: "KR", country: "South Korea", shape: "circle", cx: 848, cy: 195, r: 7.5 },
+    { code: "ID", country: "Indonesia", shape: "oval", cx: 815, cy: 325, rx: 24, ry: 10 },
+    { code: "TH", country: "Thailand", shape: "oval", cx: 770, cy: 265, rx: 9, ry: 15 },
+    { code: "VN", country: "Vietnam", shape: "oval", cx: 785, cy: 265, rx: 7, ry: 17 },
+    { code: "KH", country: "Cambodia", shape: "circle", cx: 780, cy: 278, r: 7 },
+    { code: "AU", country: "Australia", shape: "oval", cx: 855, cy: 385, rx: 30, ry: 21 },
+    { code: "NZ", country: "New Zealand", shape: "oval", cx: 935, cy: 435, rx: 7, ry: 16 }
   ];
 
-  const UNESCO_DATABASE = RAW_UNESCO_DATA.map(r => ({
-    id: r[0],
-    name: r[1],
-    country: r[2],
-    region: r[3],
-    year: r[4],
-    desc: r[5]
-  }));
+  // Retrieve UNESCO sites loaded from sites.js
+  const SITES = (typeof window !== 'undefined' && window.UNESCO_DATABASE) ? window.UNESCO_DATABASE : [];
 
   // =========================================================================
-  // USER STORAGE & SETTINGS
+  // STATE MANAGEMENT
   // =========================================================================
-  const USER_STORAGE_KEY = 'unesco_user_tracker_v4';
-  const SETTINGS_KEY = 'unesco_user_settings_v4';
+  const USER_STORAGE_KEY = 'unesco_user_tracker_v5';
+  const SETTINGS_KEY = 'unesco_user_settings_v5';
 
   let userSitesMap = {};
   let userSettings = { 
@@ -1293,7 +626,7 @@
   }
 
   // =========================================================================
-  // THEME & FONT SIZING
+  // THEME & FONT
   // =========================================================================
   function applyTheme(isDark) {
     document.documentElement.classList.toggle('dark', isDark);
@@ -1321,7 +654,7 @@
   })();
 
   // =========================================================================
-  // TAB NAVIGATION (3 TABS: Map, Browse, Stats)
+  // TAB NAVIGATION
   // =========================================================================
   let currentActiveTab = 'map';
 
@@ -1344,7 +677,7 @@
   }
 
   // =========================================================================
-  // VIEW 0: MAP ENGINE (ZOOM, PAN, 4-TIER COLORING)
+  // VIEW 0: REWORKED VECTOR WORLD MAP ENGINE (CIRCLES/OVALS ONLY FOR UNESCO SITES)
   // =========================================================================
   let mapScale = 1.0;
   let mapPanX = 0;
@@ -1356,6 +689,55 @@
 
   const svgMap = document.getElementById('worldSvgMap');
   const mapContainer = document.getElementById('mapViewportContainer');
+
+  function buildMapCountryNodes() {
+    const container = document.getElementById('mapCountryGroup');
+    container.innerHTML = '';
+
+    // Filter to ONLY countries that actually exist in the UNESCO database
+    const presentCodes = new Set(SITES.map(s => s.code));
+    const activeNodes = MAP_COUNTRY_NODES.filter(n => presentCodes.has(n.code));
+
+    activeNodes.forEach(node => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", "country-node-group cursor-pointer");
+      g.setAttribute("data-country", node.country);
+      g.setAttribute("data-code", node.code);
+
+      let shapeEl;
+      if (node.shape === 'oval') {
+        shapeEl = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+        shapeEl.setAttribute("cx", node.cx);
+        shapeEl.setAttribute("cy", node.cy);
+        shapeEl.setAttribute("rx", node.rx);
+        shapeEl.setAttribute("ry", node.ry);
+      } else {
+        shapeEl = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        shapeEl.setAttribute("cx", node.cx);
+        shapeEl.setAttribute("cy", node.cy);
+        shapeEl.setAttribute("r", node.r);
+      }
+
+      shapeEl.setAttribute("id", `node-${node.code}`);
+      shapeEl.setAttribute("data-country", node.country);
+      shapeEl.setAttribute("data-code", node.code);
+      shapeEl.setAttribute("class", "country-node-shape");
+      shapeEl.setAttribute("stroke", "#ffffff");
+      shapeEl.setAttribute("stroke-width", "1");
+
+      const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      textEl.setAttribute("x", node.cx);
+      textEl.setAttribute("y", node.cy);
+      textEl.setAttribute("dy", "0.32em");
+      textEl.setAttribute("text-anchor", "middle");
+      textEl.setAttribute("class", "country-node-text fill-white");
+      textEl.textContent = node.code;
+
+      g.appendChild(shapeEl);
+      g.appendChild(textEl);
+      container.appendChild(g);
+    });
+  }
 
   function updateSvgViewBox() {
     const baseW = 1000;
@@ -1393,7 +775,7 @@
     updateSvgViewBox();
   }
 
-  // Touch Gestures
+  // Touch Gesture Listeners
   mapContainer.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
       isDraggingMap = true;
@@ -1439,7 +821,7 @@
     startDist = 0;
   });
 
-  // Mouse pan
+  // Mouse Controls
   mapContainer.addEventListener('mousedown', (e) => {
     if (e.button === 0 && mapScale > 1.0) {
       isDraggingMap = true;
@@ -1475,11 +857,11 @@
     const COLOR_AMBER = isDark ? '#d97706' : '#f59e0b';
     const COLOR_EMERALD = isDark ? '#059669' : '#10b981';
 
-    const paths = document.querySelectorAll('.country-vector');
+    const nodeShapes = document.querySelectorAll('.country-node-shape');
 
-    paths.forEach(p => {
-      const country = p.getAttribute('data-country');
-      const countrySites = UNESCO_DATABASE.filter(s => s.country === country);
+    nodeShapes.forEach(shape => {
+      const country = shape.getAttribute('data-country');
+      const countrySites = SITES.filter(s => s.country === country);
       const visitedCount = countrySites.filter(s => getSiteLog(s.id).status === 'visited').length;
       const totalSites = countrySites.length;
       const pct = totalSites > 0 ? (visitedCount / totalSites) : 0;
@@ -1493,21 +875,22 @@
         fillColor = COLOR_LIGHT_BLUE;
       }
 
-      p.setAttribute('fill', fillColor);
-      p.setAttribute('stroke', isDark ? '#0f172a' : '#ffffff');
+      shape.setAttribute('fill', fillColor);
+      shape.setAttribute('stroke', isDark ? '#0f172a' : '#ffffff');
 
-      p.onclick = (e) => {
+      // Hook up click handler
+      shape.parentElement.onclick = (e) => {
         e.stopPropagation();
-        handleCountryVectorClick(country, visitedCount, totalSites, p);
+        handleCountryNodeClick(country, visitedCount, totalSites, shape);
       };
     });
 
     renderMapCountryChips();
   }
 
-  function handleCountryVectorClick(country, visitedCount, totalSites, element) {
-    document.querySelectorAll('.country-vector').forEach(el => el.classList.remove('selected-country'));
-    element.classList.add('selected-country');
+  function handleCountryNodeClick(country, visitedCount, totalSites, shapeElement) {
+    document.querySelectorAll('.country-node-shape').forEach(el => el.classList.remove('selected-country'));
+    shapeElement.classList.add('selected-country');
     inspectedCountry = country;
 
     const pct = totalSites > 0 ? Math.round((visitedCount / totalSites) * 100) : 0;
@@ -1524,7 +907,6 @@
     userSettings.selectedBrowseCountry = inspectedCountry;
     saveState();
     
-    // Select in dropdown
     const select = document.getElementById('browseCountrySelect');
     if (select) select.value = inspectedCountry;
 
@@ -1533,20 +915,20 @@
   }
 
   function onMapCanvasClick(e) {
-    if (e.target.id === 'worldSvgMap' || e.target.id === 'oceanRect' || e.target.tagName === 'line') {
+    if (e.target.id === 'worldSvgMap' || e.target.id === 'oceanRect' || e.target.tagName === 'line' || e.target.tagName === 'path') {
       inspectedCountry = null;
-      document.querySelectorAll('.country-vector').forEach(el => el.classList.remove('selected-country'));
-      document.getElementById('mapInspectorText').innerText = "Tap any country to inspect";
+      document.querySelectorAll('.country-node-shape').forEach(el => el.classList.remove('selected-country'));
+      document.getElementById('mapInspectorText').innerText = "Tap any country circle to inspect";
       document.getElementById('mapInspectOpenBtn').classList.add('hidden');
     }
   }
 
   function renderMapCountryChips() {
     const container = document.getElementById('mapCountryQuickChips');
-    const countries = [...new Set(UNESCO_DATABASE.map(s => s.country))].sort();
+    const countries = [...new Set(SITES.map(s => s.country))].sort();
 
     container.innerHTML = countries.map(c => {
-      const sites = UNESCO_DATABASE.filter(s => s.country === c);
+      const sites = SITES.filter(s => s.country === c);
       const visited = sites.filter(s => getSiteLog(s.id).status === 'visited').length;
       const pct = sites.length > 0 ? visited / sites.length : 0;
 
@@ -1577,11 +959,11 @@
   }
 
   // =========================================================================
-  // VIEW 1: UNIFIED BROWSE VIEW RENDERING (MERGED QUICK + BROWSE)
+  // VIEW 1: UNIFIED BROWSE VIEW RENDERING
   // =========================================================================
   function initUnifiedCountryDropdown() {
     const select = document.getElementById('browseCountrySelect');
-    const countries = [...new Set(UNESCO_DATABASE.map(s => s.country))].sort();
+    const countries = [...new Set(SITES.map(s => s.country))].sort();
     
     let html = '<option value="all">🌍 All Countries (Global Browse)</option>';
     html += countries.map(c => `<option value="${c}" ${c === userSettings.selectedBrowseCountry ? 'selected' : ''}>${c}</option>`).join('');
@@ -1601,14 +983,14 @@
 
     const isGlobal = selectedCountry === 'all';
 
-    // Filter sites
-    const filtered = UNESCO_DATABASE.filter(s => {
+    // Search matches against title, description, country, and region
+    const filtered = SITES.filter(s => {
       if (!isGlobal && s.country !== selectedCountry) return false;
       const log = getSiteLog(s.id);
       if (statusFilter !== 'all' && log.status !== statusFilter) return false;
       if (query) {
-        const txt = `${s.name} ${s.country} ${s.region} ${s.desc}`.toLowerCase();
-        if (!txt.includes(query)) return false;
+        const fullTxt = `${s.name} ${s.country} ${s.code} ${s.region} ${s.desc}`.toLowerCase();
+        if (!fullTxt.includes(query)) return false;
       }
       return true;
     });
@@ -1616,18 +998,18 @@
     // Update Progress Pill
     const progressPill = document.getElementById('browseCountryProgressPill');
     if (isGlobal) {
-      const globalVisited = UNESCO_DATABASE.filter(s => getSiteLog(s.id).status === 'visited').length;
-      progressPill.innerText = `${globalVisited} / ${UNESCO_DATABASE.length} visited (${Math.round((globalVisited / UNESCO_DATABASE.length) * 100)}%)`;
+      const globalVisited = SITES.filter(s => getSiteLog(s.id).status === 'visited').length;
+      progressPill.innerText = `${globalVisited} / ${SITES.length} visited (${Math.round((globalVisited / (SITES.length || 1)) * 100)}%)`;
     } else {
-      const countrySites = UNESCO_DATABASE.filter(s => s.country === selectedCountry);
+      const countrySites = SITES.filter(s => s.country === selectedCountry);
       const countryVisited = countrySites.filter(s => getSiteLog(s.id).status === 'visited').length;
       progressPill.innerText = `${countryVisited} / ${countrySites.length} visited (${Math.round((countryVisited / (countrySites.length || 1)) * 100)}%)`;
     }
 
-    // Counters
+    // Dynamic Counters
     document.getElementById('browseCountLabel').innerText = `Showing ${filtered.length} sites`;
-    const totalVisited = UNESCO_DATABASE.filter(s => getSiteLog(s.id).status === 'visited').length;
-    document.getElementById('browseVisitedCounter').innerText = `${totalVisited}/${UNESCO_DATABASE.length} Visited Worldwide`;
+    const totalVisited = SITES.filter(s => getSiteLog(s.id).status === 'visited').length;
+    document.getElementById('browseVisitedCounter').innerText = `${totalVisited}/${SITES.length} Visited Worldwide`;
 
     const container = document.getElementById('unifiedSitesContainer');
     if (filtered.length === 0) {
@@ -1640,7 +1022,7 @@
       return;
     }
 
-    // Grouping: by Region if single country, or by Country if All Countries
+    // Grouping: by Country if Global, or by Region if Single Country
     if (isGlobal) {
       const byCountry = {};
       filtered.forEach(s => {
@@ -1720,7 +1102,7 @@
           </button>
         </div>
 
-        <!-- 3-Way High-Hit Status Capsule Buttons with vivid colors -->
+        <!-- 3-Way Status Capsule Buttons -->
         <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
           <button onclick="setSiteStatus('${site.id}', 'unvisited')" class="py-1.5 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${log.status === 'unvisited' ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}">
             <span>Unvisited</span>
@@ -1739,7 +1121,7 @@
   }
 
   // =========================================================================
-  // VIEW 2: DUAL STATS & SORTABLE COUNTRY LEADERBOARD
+  // VIEW 2: DUAL STATS & SORTABLE LEADERBOARD
   // =========================================================================
   function setStatsSorting(mode) {
     userSettings.statsSort = mode;
@@ -1758,28 +1140,29 @@
   }
 
   function renderStatsView() {
-    const includedTotal = UNESCO_DATABASE.length; // Exactly 600
-    const officialTotal = OFFICIAL_WORLD_HERITAGE_TOTAL; // 1,223
+    const includedTotal = SITES.length;
+    const officialTotal = OFFICIAL_WORLD_HERITAGE_TOTAL;
 
-    const visitedCount = UNESCO_DATABASE.filter(s => getSiteLog(s.id).status === 'visited').length;
-    const wishlistCount = UNESCO_DATABASE.filter(s => getSiteLog(s.id).status === 'wishlist').length;
+    const visitedCount = SITES.filter(s => getSiteLog(s.id).status === 'visited').length;
+    const wishlistCount = SITES.filter(s => getSiteLog(s.id).status === 'wishlist').length;
     
     // Tier 1: Included Sites Progress
     const includedPct = Math.round((visitedCount / (includedTotal || 1)) * 100);
     document.getElementById('statsVisitedCount').innerText = visitedCount;
     document.getElementById('statsWishlistCount').innerText = wishlistCount;
+    document.getElementById('statsTotalCount').innerText = includedTotal;
     document.getElementById('statsIncludedPct').innerText = includedPct + '%';
     document.getElementById('statsIncludedBar').style.width = includedPct + '%';
 
-    // Tier 2: Official UNESCO Worldwide Milestone
+    // Tier 2: Official UNESCO Benchmark (1,223 Properties)
     const officialPct = ((visitedCount / officialTotal) * 100).toFixed(1);
     document.getElementById('statsOfficialPct').innerText = officialPct + '%';
     document.getElementById('statsOfficialBar').style.width = Math.min(100, (visitedCount / officialTotal) * 100) + '%';
     document.getElementById('statsOfficialVisitedTally').innerText = `${visitedCount} / ${officialTotal} Total Sites`;
 
-    // Country Breakdown Aggregation
+    // Leaderboard Aggregation
     const countryMap = {};
-    UNESCO_DATABASE.forEach(s => {
+    SITES.forEach(s => {
       if (!countryMap[s.country]) {
         countryMap[s.country] = { total: 0, visited: 0, mostRecent: 0 };
       }
@@ -1802,14 +1185,12 @@
       mostRecent: countryMap[c].mostRecent
     }));
 
-    // Sorting according to user selected sort
     const currentSort = userSettings.statsSort || 'completion';
     if (currentSort === 'alpha') {
       countryArr.sort((a, b) => a.name.localeCompare(b.name));
     } else if (currentSort === 'recent') {
       countryArr.sort((a, b) => (b.mostRecent - a.mostRecent) || (b.visited - a.visited) || a.name.localeCompare(b.name));
     } else {
-      // 'completion' default
       countryArr.sort((a, b) => (b.pct - a.pct) || (b.visited - a.visited) || a.name.localeCompare(b.name));
     }
 
@@ -1848,7 +1229,7 @@
   let currentDetailRating = 0;
 
   function openSiteDetailModal(siteId) {
-    const site = UNESCO_DATABASE.find(s => s.id === siteId);
+    const site = SITES.find(s => s.id === siteId);
     if (!site) return;
     currentDetailSiteId = siteId;
 
@@ -1957,7 +1338,7 @@
 
   function exportUserData() {
     const payload = {
-      version: 4,
+      version: 5,
       exportDate: new Date().toISOString(),
       userSitesMap,
       userSettings
@@ -2038,6 +1419,7 @@
   // INITIALIZATION
   // =========================================================================
   loadState();
+  buildMapCountryNodes();
   initUnifiedCountryDropdown();
   switchTab('map');
   lucide.createIcons();
