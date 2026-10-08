@@ -12,7 +12,7 @@
 <title>my little UNESCO</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<!-- UNESCO database loaded from companion file -->
+<!-- UNESCO database loaded dynamically from companion file -->
 <script src="sites.js"></script>
 <script>
   tailwind.config = { darkMode: 'class' };
@@ -51,13 +51,13 @@
     transition: transform 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, fill 0.25s ease;
   }
   .country-node-shape:hover {
-    stroke-width: 2.4px !important;
-    filter: drop-shadow(0 2px 5px rgba(16, 185, 129, 0.45));
+    stroke-width: 2.2px !important;
+    filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
   }
   .country-node-shape.selected-country {
     stroke: #3b82f6 !important;
     stroke-width: 2.8px !important;
-    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.75));
   }
 
   .country-node-text {
@@ -66,7 +66,7 @@
     font-size: 7.5px;
     font-weight: 900;
     letter-spacing: -0.2px;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 
   .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -128,7 +128,7 @@
       </div>
     </header>
 
-    <!-- Global Navigation Tabs: Map, Browse, Stats -->
+    <!-- Global Navigation Tabs -->
     <div class="px-5 pt-1 pb-3">
       <div class="flex p-1 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300/40 dark:border-slate-700/50">
         <button onclick="switchTab('map')" id="tabBtn-map" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -150,28 +150,28 @@
     <main class="flex-1 px-5 pb-8 flex flex-col">
 
       <!-- ========================================== -->
-      <!-- VIEW 0: REWORKED BUBBLE VECTOR WORLD MAP   -->
+      <!-- VIEW 0: ACCURATE VECTOR WORLD MAP          -->
       <!-- ========================================== -->
       <section id="view-map" class="space-y-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm space-y-3">
           
-          <!-- Inspector Banner with Direct Open Button -->
+          <!-- Inspector Banner with Open Button directly linked to Browse -->
           <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between min-h-[48px]">
             <div>
               <span id="mapInspectorText" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">
-                Tap any country circle to inspect
+                Tap any country to inspect (Double-click to open)
               </span>
             </div>
             <button id="mapInspectOpenBtn" onclick="openInspectedCountryInBrowse()" class="hidden px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1 cursor-pointer">
-              <span>Open in Browse</span>
+              <span>Open</span>
               <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </button>
           </div>
 
-          <!-- Interactive Viewport Container with Pinch/Pan Zoom -->
+          <!-- Interactive Viewport Container with Zoom & Pan -->
           <div id="mapViewportContainer" class="relative w-full aspect-[16/10] bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden">
             
-            <!-- Zoom Controls Pill -->
+            <!-- Zoom Controls -->
             <div class="absolute top-2.5 right-2.5 z-10 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-800 shadow-md overflow-hidden text-slate-700 dark:text-slate-200">
               <button onclick="zoomMap(1.3)" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-200 dark:border-slate-800" title="Zoom In">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -202,21 +202,35 @@
                 <line x1="500" y1="0" x2="500" y2="500" />
               </g>
 
-              <!-- Precise Continental Basemap Outlines -->
-              <g fill="#94a3b8" opacity="0.22" stroke="#64748b" stroke-width="0.4">
-                <!-- North America -->
-                <path d="M 60 70 L 100 50 L 150 48 L 220 52 L 290 80 L 310 95 L 290 145 L 255 185 L 250 215 L 205 270 L 175 235 L 125 185 L 65 140 Z M 325 35 L 380 30 L 390 65 L 340 75 Z" />
+              <!-- Geographically Accurate Continental Landmass Polygons -->
+              <g fill="#94a3b8" opacity="0.22" stroke="#64748b" stroke-width="0.5">
+                <!-- North & Central America -->
+                <path d="M 65 72 L 95 55 L 140 48 L 195 42 L 255 45 L 305 60 L 325 80 L 305 110 L 290 120 L 285 145 L 295 155 L 265 175 L 250 178 L 245 205 L 260 215 L 275 228 L 285 225 L 275 235 L 255 230 L 240 215 L 210 205 L 180 185 L 160 160 L 125 155 L 105 125 L 75 110 Z" />
+                <!-- Greenland -->
+                <path d="M 335 28 L 380 22 L 395 55 L 365 75 L 340 70 Z" />
+                <!-- Caribbean -->
+                <path d="M 262 186 L 285 186 L 288 192 L 265 190 Z" />
                 <!-- South America -->
-                <path d="M 265 260 L 325 255 L 395 305 L 395 375 L 340 435 L 315 485 L 285 450 L 265 340 Z" />
-                <!-- Eurasia -->
-                <path d="M 450 115 L 530 85 L 610 80 L 800 65 L 940 100 L 930 160 L 895 240 L 840 235 L 755 240 L 730 310 L 685 240 L 590 200 L 485 125 Z M 440 110 L 485 105 L 475 145 L 450 145 Z M 870 150 L 905 160 L 890 215 L 865 200 Z" />
-                <!-- Africa -->
-                <path d="M 460 210 L 585 210 L 635 250 L 640 295 L 600 425 L 530 435 L 490 320 L 450 250 Z M 640 370 L 655 375 L 645 425 L 632 410 Z" />
-                <!-- Australia & New Zealand -->
-                <path d="M 795 335 L 910 335 L 905 440 L 810 435 Z M 920 440 L 935 445 L 930 480 L 915 470 Z" />
+                <path d="M 285 230 L 315 230 L 345 245 L 380 265 L 398 290 L 395 330 L 365 375 L 335 435 L 320 460 L 310 460 L 295 410 L 288 350 L 280 290 L 275 250 Z" />
+                <!-- British Isles -->
+                <path d="M 482 100 L 498 95 L 495 120 L 485 122 Z M 470 105 L 480 105 L 478 118 L 468 116 Z" />
+                <!-- Scandinavia -->
+                <path d="M 525 60 L 565 55 L 575 80 L 550 95 L 535 90 L 528 75 Z" />
+                <!-- Continental Eurasia -->
+                <path d="M 505 110 L 535 98 L 600 85 L 700 65 L 850 50 L 935 70 L 920 120 L 880 140 L 860 175 L 820 190 L 785 225 L 755 220 L 740 185 L 710 180 L 690 230 L 675 210 L 640 170 L 605 160 L 585 140 L 575 152 L 555 148 L 542 125 L 525 122 L 515 132 L 490 135 L 472 140 L 470 152 L 495 152 L 510 138 L 520 135 L 505 110 Z" />
+                <!-- Italian Boot & Sicily -->
+                <path d="M 528 128 L 542 135 L 548 145 L 540 148 L 532 138 Z M 534 150 L 542 150 L 538 154 Z" />
+                <!-- Japan -->
+                <path d="M 878 135 L 895 140 L 890 165 L 875 160 Z" />
+                <!-- Africa & Madagascar -->
+                <path d="M 462 158 L 515 156 L 535 162 L 595 168 L 635 185 L 645 225 L 635 270 L 610 320 L 575 355 L 545 350 L 530 300 L 485 240 L 445 215 L 452 175 Z M 628 290 L 642 300 L 630 345 L 620 335 Z" />
+                <!-- Australia & Tasmania -->
+                <path d="M 825 325 L 890 320 L 915 345 L 905 385 L 855 385 L 820 365 Z M 875 395 L 888 395 L 885 408 L 872 405 Z" />
+                <!-- New Zealand -->
+                <path d="M 965 355 L 980 350 L 975 375 Z M 958 375 L 970 370 L 962 395 Z" />
               </g>
 
-              <!-- Dynamically Populated Country Circles & Ovals (Only UNESCO countries) -->
+              <!-- Dynamically Populated Proportional Country Nodes -->
               <g id="mapCountryGroup"></g>
             </svg>
           </div>
@@ -264,25 +278,32 @@
 
           <div class="relative">
             <select id="browseCountrySelect" onchange="onBrowseCountryChange(this.value)" class="w-full appearance-none px-3.5 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 cursor-pointer pr-10">
-              <option value="all">🌍 All Countries (Global Browse)</option>
+              <option value="all">All Countries</option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </div>
           </div>
 
-          <!-- Search & Status Filter Row -->
+          <!-- Search, Status Filter & Clear Search Button Row -->
           <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
             <div class="relative flex-1">
               <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-              <input type="text" id="unifiedSearchInput" oninput="renderBrowseView()" placeholder="Search Colosseum, Ggantija, Parthenon, region..." class="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-emerald-400 font-medium">
+              <input type="text" id="unifiedSearchInput" oninput="renderBrowseView()" placeholder="Search any sites" class="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-emerald-400 font-medium">
             </div>
+            
             <select id="unifiedStatusFilter" onchange="renderBrowseView()" class="px-2.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold focus:outline-none">
               <option value="all">All Status</option>
               <option value="visited">Visited</option>
               <option value="wishlist">Wishlist</option>
               <option value="unvisited">Unvisited</option>
             </select>
+
+            <!-- Clear Search Button -->
+            <button onclick="clearBrowseFilters()" title="Reset all search filters" class="px-2.5 py-2 rounded-xl text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold transition flex items-center gap-1 cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Clear search</span>
+            </button>
           </div>
         </div>
 
@@ -298,7 +319,7 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- VIEW 2: STATS & WORLD BENCHMARK            -->
+      <!-- VIEW 2: DUAL STATS & WORLDWIDE BENCHMARK   -->
       <!-- ========================================== -->
       <section id="view-stats" class="hidden space-y-4">
         
@@ -354,7 +375,7 @@
           </div>
         </div>
 
-        <!-- Country Leaderboard -->
+        <!-- Country Leaderboard with Matching Completion Colors & Legend -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -363,7 +384,23 @@
             <span id="statsCountriesVisitedLabel" class="text-[10px] font-bold text-slate-400">0 Countries</span>
           </div>
 
-          <!-- Sorting Controls -->
+          <!-- Color Code Legend matching Map Page -->
+          <div class="grid grid-cols-4 gap-1.5 pt-1 text-[10px] font-extrabold text-center">
+            <div class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center gap-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#94a3b8] inline-block"></span> 0%
+            </div>
+            <div class="p-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex items-center justify-center gap-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#38bdf8] inline-block"></span> 1–49%
+            </div>
+            <div class="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center justify-center gap-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b] inline-block"></span> 50–99%
+            </div>
+            <div class="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block"></span> 100%
+            </div>
+          </div>
+
+          <!-- Sorting Controls Pill -->
           <div class="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
             <button onclick="setStatsSorting('alpha')" id="sortBtn-alpha" class="flex-1 py-1 rounded-lg transition text-center cursor-pointer">
               Alphabetical
@@ -498,79 +535,102 @@
 
 <script>
   // =========================================================================
-  // CONSTANTS & REGISTRY OF COUNTRY NODES (COORDINATES FOR CIRCLES/OVALS)
+  // GEOMETRIC REGISTRY OF COUNTRY NODES (PROPORTIONAL SIZES)
   // =========================================================================
   const OFFICIAL_WORLD_HERITAGE_TOTAL = 1223;
 
-  // Country Bubble Geometry: circles for smaller countries, ovals for larger/taller ones
+  // Proportional sizing: huge countries fill their landmasses (coast-to-coast ovals),
+  // small countries remain neat circles positioned precisely where they belong.
   const MAP_COUNTRY_NODES = [
     // North America
-    { code: "US", country: "United States", shape: "oval", cx: 215, cy: 175, rx: 25, ry: 15 },
-    { code: "CA", country: "Canada", shape: "oval", cx: 205, cy: 110, rx: 28, ry: 16 },
-    { code: "MX", country: "Mexico", shape: "oval", cx: 195, cy: 235, rx: 14, ry: 11 },
-    { code: "CU", country: "Cuba", shape: "oval", cx: 248, cy: 228, rx: 11, ry: 6 },
-    { code: "GT", country: "Guatemala", shape: "circle", cx: 212, cy: 260, r: 7 },
-    { code: "CR", country: "Costa Rica", shape: "circle", cx: 236, cy: 280, r: 6 },
-    { code: "PA", country: "Panama", shape: "circle", cx: 252, cy: 284, r: 6 },
+    { code: "CA", country: "Canada", shape: "oval", cx: 225, cy: 85, rx: 68, ry: 22 },
+    { code: "US", country: "United States", shape: "oval", cx: 230, cy: 142, rx: 58, ry: 18 },
+    { code: "MX", country: "Mexico", shape: "oval", cx: 215, cy: 195, rx: 25, ry: 14 },
+    { code: "CU", country: "Cuba", shape: "oval", cx: 272, cy: 188, rx: 14, ry: 6 },
+    { code: "GT", country: "Guatemala", shape: "circle", cx: 248, cy: 212, r: 7 },
+    { code: "CR", country: "Costa Rica", shape: "circle", cx: 265, cy: 225, r: 6 },
+    { code: "PA", country: "Panama", shape: "circle", cx: 276, cy: 228, r: 6 },
 
     // South America
-    { code: "BR", country: "Brazil", shape: "oval", cx: 345, cy: 340, rx: 22, ry: 20 },
-    { code: "PE", country: "Peru", shape: "oval", cx: 285, cy: 320, rx: 12, ry: 15 },
-    { code: "AR", country: "Argentina", shape: "oval", cx: 310, cy: 420, rx: 11, ry: 24 },
-    { code: "CL", country: "Chile", shape: "oval", cx: 288, cy: 420, rx: 7, ry: 24 },
-    { code: "CO", country: "Colombia", shape: "oval", cx: 290, cy: 265, rx: 12, ry: 12 },
-    { code: "EC", country: "Ecuador", shape: "circle", cx: 272, cy: 288, r: 7 },
-    { code: "BO", country: "Bolivia", shape: "oval", cx: 312, cy: 350, rx: 12, ry: 12 },
+    { code: "CO", country: "Colombia", shape: "oval", cx: 295, cy: 245, rx: 13, ry: 13 },
+    { code: "VE", country: "Venezuela", shape: "oval", cx: 318, cy: 245, rx: 14, ry: 11 },
+    { code: "EC", country: "Ecuador", shape: "circle", cx: 280, cy: 258, r: 7 },
+    { code: "PE", country: "Peru", shape: "oval", cx: 286, cy: 290, rx: 12, ry: 18 },
+    { code: "BO", country: "Bolivia", shape: "oval", cx: 320, cy: 315, rx: 14, ry: 14 },
+    { code: "BR", country: "Brazil", shape: "oval", cx: 360, cy: 295, rx: 36, ry: 32 },
+    { code: "CL", country: "Chile", shape: "oval", cx: 298, cy: 365, rx: 6, ry: 32 },
+    { code: "AR", country: "Argentina", shape: "oval", cx: 324, cy: 375, rx: 13, ry: 30 },
+    { code: "UY", country: "Uruguay", shape: "circle", cx: 338, cy: 350, r: 7 },
 
-    // Europe
-    { code: "GB", country: "United Kingdom", shape: "oval", cx: 472, cy: 132, rx: 9, ry: 13 },
-    { code: "FR", country: "France", shape: "oval", cx: 495, cy: 165, rx: 13, ry: 12 },
-    { code: "ES", country: "Spain", shape: "oval", cx: 472, cy: 195, rx: 14, ry: 11 },
-    { code: "PT", country: "Portugal", shape: "oval", cx: 450, cy: 195, rx: 7, ry: 12 },
-    { code: "DE", country: "Germany", shape: "oval", cx: 520, cy: 148, rx: 11, ry: 12 },
-    { code: "IT", country: "Italy", shape: "oval", cx: 536, cy: 188, rx: 8, ry: 15 },
-    { code: "CH", country: "Switzerland", shape: "circle", cx: 508, cy: 170, r: 7 },
-    { code: "NL", country: "Netherlands", shape: "circle", cx: 504, cy: 142, r: 7 },
-    { code: "BE", country: "Belgium", shape: "circle", cx: 496, cy: 152, r: 6.5 },
-    { code: "AT", country: "Austria", shape: "oval", cx: 532, cy: 165, rx: 10, ry: 6.5 },
-    { code: "GR", country: "Greece", shape: "oval", cx: 574, cy: 215, rx: 10, ry: 10 },
-    { code: "MT", country: "Malta", shape: "circle", cx: 546, cy: 228, r: 6 },
-    { code: "SE", country: "Sweden", shape: "oval", cx: 538, cy: 105, rx: 9, ry: 18 },
-    { code: "NO", country: "Norway", shape: "oval", cx: 518, cy: 100, rx: 8, ry: 18 },
-    { code: "FI", country: "Finland", shape: "oval", cx: 565, cy: 95, rx: 9, ry: 15 },
-    { code: "PL", country: "Poland", shape: "oval", cx: 552, cy: 145, rx: 12, ry: 11 },
-    { code: "CZ", country: "Czech Republic", shape: "circle", cx: 536, cy: 155, r: 7 },
-    { code: "HR", country: "Croatia", shape: "circle", cx: 548, cy: 182, r: 6.5 },
+    // Europe (Geographically positioned above North Africa and in Mediterranean)
+    { code: "GB", country: "United Kingdom", shape: "oval", cx: 492, cy: 105, rx: 9, ry: 14 },
+    { code: "IE", country: "Ireland", shape: "circle", cx: 474, cy: 108, r: 7 },
+    { code: "FR", country: "France", shape: "oval", cx: 508, cy: 122, rx: 13, ry: 12 },
+    { code: "ES", country: "Spain", shape: "oval", cx: 488, cy: 140, rx: 14, ry: 10 },
+    { code: "PT", country: "Portugal", shape: "oval", cx: 474, cy: 142, rx: 6, ry: 11 },
+    { code: "DE", country: "Germany", shape: "oval", cx: 528, cy: 108, rx: 12, ry: 13 },
+    { code: "IT", country: "Italy", shape: "oval", cx: 535, cy: 135, rx: 8, ry: 16 },
+    { code: "CH", country: "Switzerland", shape: "circle", cx: 520, cy: 124, r: 6 },
+    { code: "NL", country: "Netherlands", shape: "circle", cx: 514, cy: 103, r: 6 },
+    { code: "BE", country: "Belgium", shape: "circle", cx: 510, cy: 110, r: 5.5 },
+    { code: "AT", country: "Austria", shape: "oval", cx: 538, cy: 120, rx: 9, ry: 6 },
+    { code: "PL", country: "Poland", shape: "oval", cx: 555, cy: 105, rx: 13, ry: 11 },
+    { code: "CZ", country: "Czech Republic", shape: "circle", cx: 540, cy: 113, r: 6.5 },
+    { code: "GR", country: "Greece", shape: "oval", cx: 566, cy: 145, rx: 10, ry: 10 },
+    { code: "HR", country: "Croatia", shape: "oval", cx: 546, cy: 127, rx: 7, ry: 6 },
+    { code: "MT", country: "Malta", shape: "circle", cx: 538, cy: 153, r: 5.5 },
+    { code: "SE", country: "Sweden", shape: "oval", cx: 544, cy: 75, rx: 9, ry: 20 },
+    { code: "NO", country: "Norway", shape: "oval", cx: 528, cy: 72, rx: 8, ry: 20 },
+    { code: "FI", country: "Finland", shape: "oval", cx: 568, cy: 68, rx: 9, ry: 18 },
 
-    // Middle East & Africa
-    { code: "TR", country: "Turkey", shape: "oval", cx: 620, cy: 195, rx: 18, ry: 10 },
-    { code: "EG", country: "Egypt", shape: "oval", cx: 605, cy: 235, rx: 14, ry: 12 },
-    { code: "MA", country: "Morocco", shape: "oval", cx: 465, cy: 225, rx: 13, ry: 10 },
-    { code: "TN", country: "Tunisia", shape: "circle", cx: 520, cy: 220, r: 7 },
-    { code: "JO", country: "Jordan", shape: "circle", cx: 625, cy: 232, r: 6 },
-    { code: "IL", country: "Israel", shape: "circle", cx: 618, cy: 230, r: 5.5 },
-    { code: "SA", country: "Saudi Arabia", shape: "oval", cx: 650, cy: 250, rx: 18, ry: 16 },
-    { code: "IR", country: "Iran", shape: "oval", cx: 675, cy: 215, rx: 17, ry: 15 },
-    { code: "ZA", country: "South Africa", shape: "oval", cx: 575, cy: 415, rx: 16, ry: 13 },
-    { code: "ET", country: "Ethiopia", shape: "oval", cx: 645, cy: 295, rx: 13, ry: 12 },
-    { code: "TZ", country: "Tanzania", shape: "oval", cx: 630, cy: 335, rx: 12, ry: 11 },
-    { code: "KE", country: "Kenya", shape: "circle", cx: 635, cy: 312, r: 8 },
+    // Eurasia / Middle East
+    { code: "RU", country: "Russia", shape: "oval", cx: 720, cy: 78, rx: 115, ry: 25 },
+    { code: "TR", country: "Turkey", shape: "oval", cx: 596, cy: 138, rx: 20, ry: 9 },
+    { code: "EG", country: "Egypt", shape: "oval", cx: 585, cy: 176, rx: 17, ry: 13 },
+    { code: "MA", country: "Morocco", shape: "oval", cx: 475, cy: 168, rx: 14, ry: 11 },
+    { code: "TN", country: "Tunisia", shape: "circle", cx: 526, cy: 160, r: 7 },
+    { code: "JO", country: "Jordan", shape: "circle", cx: 602, cy: 164, r: 6 },
+    { code: "IL", country: "Israel", shape: "circle", cx: 596, cy: 163, r: 5.5 },
+    { code: "LB", country: "Lebanon", shape: "circle", cx: 599, cy: 157, r: 5 },
+    { code: "SA", country: "Saudi Arabia", shape: "oval", cx: 635, cy: 188, rx: 22, ry: 16 },
+    { code: "IR", country: "Iran", shape: "oval", cx: 650, cy: 152, rx: 20, ry: 16 },
+    { code: "OM", country: "Oman", shape: "oval", cx: 656, cy: 196, rx: 10, ry: 9 },
+    { code: "UZ", country: "Uzbekistan", shape: "oval", cx: 680, cy: 134, rx: 15, ry: 8 },
+
+    // Sub-Saharan Africa
+    { code: "SN", country: "Senegal", shape: "circle", cx: 450, cy: 210, r: 7.5 },
+    { code: "GH", country: "Ghana", shape: "circle", cx: 498, cy: 232, r: 6.5 },
+    { code: "NG", country: "Nigeria", shape: "oval", cx: 522, cy: 225, rx: 11, ry: 9 },
+    { code: "CD", country: "DR Congo", shape: "oval", cx: 565, cy: 255, rx: 18, ry: 18 },
+    { code: "UG", country: "Uganda", shape: "circle", cx: 590, cy: 248, r: 7 },
+    { code: "ET", country: "Ethiopia", shape: "oval", cx: 610, cy: 228, rx: 14, ry: 12 },
+    { code: "KE", country: "Kenya", shape: "circle", cx: 605, cy: 252, r: 8 },
+    { code: "TZ", country: "Tanzania", shape: "oval", cx: 602, cy: 270, rx: 13, ry: 12 },
+    { code: "ZW", country: "Zimbabwe", shape: "circle", cx: 582, cy: 305, r: 8 },
+    { code: "BW", country: "Botswana", shape: "circle", cx: 568, cy: 312, r: 8 },
+    { code: "NA", country: "Namibia", shape: "oval", cx: 550, cy: 312, rx: 11, ry: 14 },
+    { code: "ZA", country: "South Africa", shape: "oval", cx: 568, cy: 340, rx: 20, ry: 14 },
+    { code: "MG", country: "Madagascar", shape: "oval", cx: 632, cy: 315, rx: 8, ry: 18 },
 
     // Asia & Oceania
-    { code: "RU", country: "Russia", shape: "oval", cx: 720, cy: 105, rx: 50, ry: 18 },
-    { code: "CN", country: "China", shape: "oval", cx: 785, cy: 195, rx: 28, ry: 18 },
-    { code: "IN", country: "India", shape: "oval", cx: 715, cy: 260, rx: 17, ry: 20 },
-    { code: "JP", country: "Japan", shape: "oval", cx: 885, cy: 190, rx: 9, ry: 17 },
-    { code: "KR", country: "South Korea", shape: "circle", cx: 848, cy: 195, r: 7.5 },
-    { code: "ID", country: "Indonesia", shape: "oval", cx: 815, cy: 325, rx: 24, ry: 10 },
-    { code: "TH", country: "Thailand", shape: "oval", cx: 770, cy: 265, rx: 9, ry: 15 },
-    { code: "VN", country: "Vietnam", shape: "oval", cx: 785, cy: 265, rx: 7, ry: 17 },
-    { code: "KH", country: "Cambodia", shape: "circle", cx: 780, cy: 278, r: 7 },
-    { code: "AU", country: "Australia", shape: "oval", cx: 855, cy: 385, rx: 30, ry: 21 },
-    { code: "NZ", country: "New Zealand", shape: "oval", cx: 935, cy: 435, rx: 7, ry: 16 }
+    { code: "CN", country: "China", shape: "oval", cx: 780, cy: 145, rx: 44, ry: 24 },
+    { code: "IN", country: "India", shape: "oval", cx: 715, cy: 188, rx: 18, ry: 24 },
+    { code: "NP", country: "Nepal", shape: "oval", cx: 735, cy: 172, rx: 10, ry: 5 },
+    { code: "LK", country: "Sri Lanka", shape: "circle", cx: 724, cy: 230, r: 6.5 },
+    { code: "JP", country: "Japan", shape: "oval", cx: 885, cy: 145, rx: 10, ry: 19 },
+    { code: "KR", country: "South Korea", shape: "circle", cx: 852, cy: 144, r: 7.5 },
+    { code: "TH", country: "Thailand", shape: "oval", cx: 780, cy: 215, rx: 9, ry: 16 },
+    { code: "VN", country: "Vietnam", shape: "oval", cx: 795, cy: 210, rx: 7, ry: 20 },
+    { code: "KH", country: "Cambodia", shape: "circle", cx: 792, cy: 220, r: 7 },
+    { code: "MY", country: "Malaysia", shape: "oval", cx: 805, cy: 245, rx: 16, ry: 7 },
+    { code: "SG", country: "Singapore", shape: "circle", cx: 788, cy: 246, r: 4.5 },
+    { code: "PH", country: "Philippines", shape: "oval", cx: 835, cy: 215, rx: 8, ry: 16 },
+    { code: "ID", country: "Indonesia", shape: "oval", cx: 815, cy: 272, rx: 34, ry: 11 },
+    { code: "AU", country: "Australia", shape: "oval", cx: 870, cy: 350, rx: 42, ry: 26 },
+    { code: "NZ", country: "New Zealand", shape: "oval", cx: 975, cy: 368, rx: 7, ry: 18 }
   ];
 
-  // Retrieve UNESCO sites loaded from sites.js
+  // Retrieve sites from sites.js
   const SITES = (typeof window !== 'undefined' && window.UNESCO_DATABASE) ? window.UNESCO_DATABASE : [];
 
   // =========================================================================
@@ -581,7 +641,7 @@
 
   let userSitesMap = {};
   let userSettings = { 
-    selectedBrowseCountry: "Italy",
+    selectedBrowseCountry: "all",
     statsSort: "completion"
   };
 
@@ -677,7 +737,7 @@
   }
 
   // =========================================================================
-  // VIEW 0: REWORKED VECTOR WORLD MAP ENGINE (CIRCLES/OVALS ONLY FOR UNESCO SITES)
+  // MAP ENGINE (CLICK & DOUBLE-CLICK TO OPEN IN BROWSE)
   // =========================================================================
   let mapScale = 1.0;
   let mapPanX = 0;
@@ -694,7 +754,7 @@
     const container = document.getElementById('mapCountryGroup');
     container.innerHTML = '';
 
-    // Filter to ONLY countries that actually exist in the UNESCO database
+    // Filter to ONLY countries with UNESCO sites
     const presentCodes = new Set(SITES.map(s => s.code));
     const activeNodes = MAP_COUNTRY_NODES.filter(n => presentCodes.has(n.code));
 
@@ -735,6 +795,21 @@
 
       g.appendChild(shapeEl);
       g.appendChild(textEl);
+
+      // Single click selects country; Double-click opens directly in Browse
+      g.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const countrySites = SITES.filter(s => s.country === node.country);
+        const visitedCount = countrySites.filter(s => getSiteLog(s.id).status === 'visited').length;
+        handleCountryNodeClick(node.country, visitedCount, countrySites.length, shapeEl);
+      });
+
+      g.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        inspectedCountry = node.country;
+        openInspectedCountryInBrowse();
+      });
+
       container.appendChild(g);
     });
   }
@@ -775,7 +850,7 @@
     updateSvgViewBox();
   }
 
-  // Touch Gesture Listeners
+  // Pan & Touch Gestures
   mapContainer.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
       isDraggingMap = true;
@@ -821,7 +896,6 @@
     startDist = 0;
   });
 
-  // Mouse Controls
   mapContainer.addEventListener('mousedown', (e) => {
     if (e.button === 0 && mapScale > 1.0) {
       isDraggingMap = true;
@@ -877,12 +951,6 @@
 
       shape.setAttribute('fill', fillColor);
       shape.setAttribute('stroke', isDark ? '#0f172a' : '#ffffff');
-
-      // Hook up click handler
-      shape.parentElement.onclick = (e) => {
-        e.stopPropagation();
-        handleCountryNodeClick(country, visitedCount, totalSites, shape);
-      };
     });
 
     renderMapCountryChips();
@@ -890,7 +958,7 @@
 
   function handleCountryNodeClick(country, visitedCount, totalSites, shapeElement) {
     document.querySelectorAll('.country-node-shape').forEach(el => el.classList.remove('selected-country'));
-    shapeElement.classList.add('selected-country');
+    if (shapeElement) shapeElement.classList.add('selected-country');
     inspectedCountry = country;
 
     const pct = totalSites > 0 ? Math.round((visitedCount / totalSites) * 100) : 0;
@@ -918,7 +986,7 @@
     if (e.target.id === 'worldSvgMap' || e.target.id === 'oceanRect' || e.target.tagName === 'line' || e.target.tagName === 'path') {
       inspectedCountry = null;
       document.querySelectorAll('.country-node-shape').forEach(el => el.classList.remove('selected-country'));
-      document.getElementById('mapInspectorText').innerText = "Tap any country circle to inspect";
+      document.getElementById('mapInspectorText').innerText = "Tap any country to inspect (Double-click to open)";
       document.getElementById('mapInspectOpenBtn').classList.add('hidden');
     }
   }
@@ -959,13 +1027,13 @@
   }
 
   // =========================================================================
-  // VIEW 1: UNIFIED BROWSE VIEW RENDERING
+  // BROWSE VIEW & CLEAR SEARCH
   // =========================================================================
   function initUnifiedCountryDropdown() {
     const select = document.getElementById('browseCountrySelect');
     const countries = [...new Set(SITES.map(s => s.country))].sort();
     
-    let html = '<option value="all">🌍 All Countries (Global Browse)</option>';
+    let html = '<option value="all">All Countries</option>';
     html += countries.map(c => `<option value="${c}" ${c === userSettings.selectedBrowseCountry ? 'selected' : ''}>${c}</option>`).join('');
     select.innerHTML = html;
   }
@@ -976,6 +1044,22 @@
     renderBrowseView();
   }
 
+  function clearBrowseFilters() {
+    userSettings.selectedBrowseCountry = 'all';
+    const select = document.getElementById('browseCountrySelect');
+    if (select) select.value = 'all';
+
+    const searchInput = document.getElementById('unifiedSearchInput');
+    if (searchInput) searchInput.value = '';
+
+    const statusFilter = document.getElementById('unifiedStatusFilter');
+    if (statusFilter) statusFilter.value = 'all';
+
+    saveState();
+    renderBrowseView();
+    showToast('Search & filters reset');
+  }
+
   function renderBrowseView() {
     const selectedCountry = userSettings.selectedBrowseCountry || 'all';
     const query = (document.getElementById('unifiedSearchInput').value || '').toLowerCase().trim();
@@ -983,7 +1067,7 @@
 
     const isGlobal = selectedCountry === 'all';
 
-    // Search matches against title, description, country, and region
+    // Search against site name, description, country, and region
     const filtered = SITES.filter(s => {
       if (!isGlobal && s.country !== selectedCountry) return false;
       const log = getSiteLog(s.id);
@@ -1022,7 +1106,6 @@
       return;
     }
 
-    // Grouping: by Country if Global, or by Region if Single Country
     if (isGlobal) {
       const byCountry = {};
       filtered.forEach(s => {
@@ -1121,7 +1204,7 @@
   }
 
   // =========================================================================
-  // VIEW 2: DUAL STATS & SORTABLE LEADERBOARD
+  // STATS & SORTABLE LEADERBOARD (MATCHING COLOR TIERS)
   // =========================================================================
   function setStatsSorting(mode) {
     userSettings.statsSort = mode;
@@ -1154,7 +1237,7 @@
     document.getElementById('statsIncludedPct').innerText = includedPct + '%';
     document.getElementById('statsIncludedBar').style.width = includedPct + '%';
 
-    // Tier 2: Official UNESCO Benchmark (1,223 Properties)
+    // Tier 2: Official UNESCO Benchmark
     const officialPct = ((visitedCount / officialTotal) * 100).toFixed(1);
     document.getElementById('statsOfficialPct').innerText = officialPct + '%';
     document.getElementById('statsOfficialBar').style.width = Math.min(100, (visitedCount / officialTotal) * 100) + '%';
@@ -1199,14 +1282,29 @@
 
     const container = document.getElementById('countryLeaderboardList');
     container.innerHTML = countryArr.map(c => {
+      // Color coded corresponding to the 4 map tiers
+      let barColor = "bg-slate-400 dark:bg-slate-600";
+      let textBadgeColor = "text-slate-400";
+
+      if (c.pct === 100 && c.total > 0) {
+        barColor = "bg-emerald-500";
+        textBadgeColor = "text-emerald-600 dark:text-emerald-400 font-black";
+      } else if (c.pct >= 50) {
+        barColor = "bg-amber-500";
+        textBadgeColor = "text-amber-600 dark:text-amber-400 font-black";
+      } else if (c.visited > 0) {
+        barColor = "bg-sky-400";
+        textBadgeColor = "text-sky-600 dark:text-sky-400 font-black";
+      }
+
       return `
         <div onclick="jumpDirectToCountry('${c.name}')" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-600 transition space-y-1.5">
           <div class="flex items-center justify-between text-xs">
             <span class="font-bold text-slate-800 dark:text-slate-200">${c.name}</span>
-            <span class="text-[11px] font-extrabold ${c.visited > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">${c.visited} / ${c.total} (${c.pct}%)</span>
+            <span class="text-[11px] ${textBadgeColor}">${c.visited} / ${c.total} (${c.pct}%)</span>
           </div>
           <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-            <div class="bg-emerald-500 h-full rounded-full transition-all" style="width: ${c.pct}%"></div>
+            <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${c.pct}%"></div>
           </div>
         </div>
       `;
