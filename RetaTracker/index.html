@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="My Reta Tracker">
+  <meta name="apple-mobile-web-app-title" content="my little RETA tracker">
   <meta name="theme-color" content="#f8fafc">
 
   <!-- ==================== Mobile App Icons & Manifest ==================== -->
@@ -21,7 +21,7 @@
   <link rel="manifest" href="manifest.json">
   <!-- ===================================================================== -->
 
-  <title>My Reta Tracker</title>
+  <title>my little RETA tracker</title>
   <style>
     :root {
       --bg-main: #f8fafc;
@@ -796,22 +796,19 @@
       border-radius: 10px;
       cursor: pointer;
     }
-  </style>
+.step-btn {touch-action:manipulation;-webkit-user-select:none;user-select:none;overscroll-behavior:contain}
+.step-btn:disabled,input[type=range]:disabled{opacity:.45;cursor:not-allowed}
+.suggestion-card.is-locked{opacity:.55;pointer-events:none}
+.backup-actions{display:flex;gap:12px}.backup-btn{flex:1;padding:14px 10px;border-radius:14px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-primary);font-weight:700;cursor:pointer}
+.backup-note{margin-top:10px;font-size:.76rem;color:var(--text-secondary);line-height:1.5}
+.target-ranges-box{margin-top:16px}
+</style>
 </head>
 <body>
 
   <header>
-    <div class="app-title">MY RETA TRACKER</div>
+    <div class="app-title">my little RETA tracker</div>
     
-    <!-- User Switcher -->
-    <div class="user-toggle-container">
-      <button id="userBtnSimon" class="user-toggle-btn simon-btn active" onclick="switchUser('Simon')">
-        <span>👤</span> Simon
-      </button>
-      <button id="userBtnMarc" class="user-toggle-btn marc-btn" onclick="switchUser('Marc')">
-        <span>👤</span> Marc
-      </button>
-    </div>
   </header>
 
   <!-- Date Selector Card -->
@@ -824,7 +821,7 @@
         <div id="dateDisplay" class="date-display">
           <span>--</span> 📅
         </div>
-        <div id="dateSub" class="date-sub">Tap to open calendar</div>
+
       </div>
 
       <button onclick="shiftDay(1)" class="date-nav-btn" aria-label="Next day">›</button>
@@ -842,18 +839,40 @@
       <div class="suggestion-card" onclick="applySuggestedDose('maintain')">
         <div class="sug-title">To Maintain Load</div>
         <div id="sugMaintainVal" class="sug-val">-- mg</div>
-        <div class="sug-desc">Compensates natural decay since last injection.</div>
+        
       </div>
 
       <div class="suggestion-card" onclick="applySuggestedDose('increase')">
         <div class="sug-title">To Increase Load</div>
         <div id="sugIncreaseVal" class="sug-val">-- mg</div>
-        <div class="sug-desc">Smooth ~25% escalation to build higher level.</div>
+        
       </div>
     </div>
   </div>
 
-  <!-- Actual Active Dosage Card (Moved Down: Between Suggested & Target Dosage Zones) -->
+  <!-- Target Dosage Slider Card -->
+  <div class="card">
+    <div class="card-label">Target Dosage</div>
+    <div class="dose-value-container">
+      <span id="doseVal" class="dose-num">2.0</span>
+      <span class="dose-unit">mg</span>
+    </div>
+
+    <div class="dose-controls">
+      <button id="doseMinus" type="button" onclick="adjustDose(-0.1)" class="step-btn">−</button>
+      <div class="slider-wrapper">
+        <input type="range" id="doseSlider" min="0.5" max="6.0" step="0.1" value="2.0" oninput="onSliderChange(this.value)">
+        <div class="range-ticks">
+          <span>0.5 mg</span>
+          <span>3.0 mg</span>
+          <span>6.0 mg</span>
+        </div>
+      </div>
+      <button id="dosePlus" type="button" onclick="adjustDose(0.1)" class="step-btn">+</button>
+    </div>
+  </div>
+
+  <!-- Estimated Active Dosage Card (Moved Down: Between Suggested & Target Dosage Zones) -->
   <div class="card active-dose-card" id="actualActiveCard">
     <div class="card-label">
       <span>Actual Active Dosage</span>
@@ -869,28 +888,23 @@
         Prior active load: <strong>0.00 mg</strong> + Target dose: <strong>2.0 mg</strong>
       </div>
     </div>
-  </div>
-
-  <!-- Target Dosage Slider Card -->
-  <div class="card">
-    <div class="card-label">Target Dosage</div>
-    <div class="dose-value-container">
-      <span id="doseVal" class="dose-num">2.0</span>
-      <span class="dose-unit">mg</span>
-    </div>
-
-    <div class="dose-controls">
-      <button onclick="adjustDose(-0.1)" class="step-btn">−</button>
-      <div class="slider-wrapper">
-        <input type="range" id="doseSlider" min="0.5" max="6.0" step="0.1" value="2.0" oninput="onSliderChange(this.value)">
-        <div class="range-ticks">
-          <span>0.5 mg</span>
-          <span>3.0 mg</span>
-          <span>6.0 mg</span>
-        </div>
+    <!-- Target Range Reference Guide -->
+    <div class="target-ranges-box">
+      <div class="target-ranges-title">🎯 Steady-State Reference Ranges</div>
+      <div class="range-item">
+        <span>Light / Maintenance:</span>
+        <span class="range-pill pill-light">1.0 – 2.5 mg</span>
       </div>
-      <button onclick="adjustDose(0.1)" class="step-btn">+</button>
+      <div class="range-item">
+        <span>Moderate Weight Loss:</span>
+        <span class="range-pill pill-mod">2.5 – 5.0 mg</span>
+      </div>
+      <div class="range-item">
+        <span>High Weight Loss / Escalation:</span>
+        <span class="range-pill pill-high">5.0 – 8.0+ mg</span>
+      </div>
     </div>
+
   </div>
 
   <!-- Injection Action Button -->
@@ -902,7 +916,7 @@
   <!-- Graphic 1: Logged Dosage History -->
   <div class="card" style="padding-bottom: 14px;">
     <div class="graph-header">
-      <div class="card-label" style="margin: 0;" id="historyCardTitle">Simon's Dosage History</div>
+      <div class="card-label" style="margin: 0;" id="historyCardTitle">Dosage History</div>
       <div class="time-filter">
         <button id="doseFilter30" class="filter-btn active" onclick="syncTimeFilter(30)">1 Month</button>
         <button id="doseFilter90" class="filter-btn" onclick="syncTimeFilter(90)">3 Months</button>
@@ -941,28 +955,16 @@
 
     <div id="serumChartWrapper" class="chart-container"></div>
 
-    <!-- Target Range Reference Guide -->
-    <div class="target-ranges-box">
-      <div class="target-ranges-title">🎯 Steady-State Target Serum Ranges</div>
-      <div class="range-item">
-        <span>Light / Maintenance:</span>
-        <span class="range-pill pill-light">1.0 – 2.5 mg</span>
-      </div>
-      <div class="range-item">
-        <span>Moderate Weight Loss:</span>
-        <span class="range-pill pill-mod">2.5 – 5.0 mg</span>
-      </div>
-      <div class="range-item">
-        <span>High Weight Loss / Escalation:</span>
-        <span class="range-pill pill-high">5.0 – 8.0+ mg</span>
-      </div>
-    </div>
-
     <div class="info-note">
       💡 <strong>Pharmacokinetics note:</strong> Active serum level is estimated in effective cumulative mg based on the ~6.0-day (144 hr) elimination half-life of Retatrutide.
     </div>
   </div>
 
+  <div class="card"><div class="card-label">Backup & Restore</div><div class="backup-actions">
+<button type="button" class="backup-btn" onclick="exportData()">Export data</button>
+<button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">Import data</button></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(event)">
+<div class="backup-note">Data stays on this phone. Export a JSON backup for safekeeping. Import replaces local records after confirmation.</div></div>
   <!-- Calendar Picker Modal -->
   <div id="calendarModal" class="modal-overlay" onclick="closeCalendarOnOverlay(event)">
     <div class="calendar-card">
@@ -986,15 +988,8 @@
   </div>
 
   <script>
-    let currentUser = 'Simon';
-    let selectedDate = new Date();
-    let calViewDate = new Date();
-    let allUserData = {
-      Simon: {},
-      Marc: {}
-    };
-    let historyData = {};
-
+    const STORAGE_KEY='reta_single_user_data_v1';
+    let selectedDate=new Date(),calViewDate=new Date(),historyData={};
     let currentDaysFilter = 30;
 
     let suggestedMaintainDose = 2.0;
@@ -1017,84 +1012,45 @@
 
     function init() {
       loadStorage();
-      updateUserTheme();
       updateUI();
     }
 
-    function loadStorage() {
-      const savedActiveUser = localStorage.getItem('reta_active_user_v3');
-      if (savedActiveUser && (savedActiveUser === 'Simon' || savedActiveUser === 'Marc')) {
-        currentUser = savedActiveUser;
-      }
-
-      const storedUsers = localStorage.getItem('reta_users_data_v3');
-      if (storedUsers) {
-        try {
-          allUserData = JSON.parse(storedUsers);
-        } catch (e) {
-          allUserData = { Simon: {}, Marc: {} };
-        }
-      }
-
-      if (!allUserData.Simon) allUserData.Simon = {};
-      if (!allUserData.Marc) allUserData.Marc = {};
-
-      // Cleanup: remove legacy un-injected entries so only successfully injected doses exist
-      ['Simon', 'Marc'].forEach(user => {
-        Object.keys(allUserData[user]).forEach(key => {
-          if (!allUserData[user][key] || !allUserData[user][key].injected) {
-            delete allUserData[user][key];
-          }
-        });
-      });
-
-      historyData = allUserData[currentUser];
+    function validateHistory(data) {
+      if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Invalid backup.');
+      const clean={};
+      for(const [key,r] of Object.entries(data)){
+        if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(key)||!r||r.injected!==true)throw Error('Invalid injection record.');
+        const [y,m,d]=key.split('-').map(Number),dt=new Date(y,m-1,d);
+        if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d)throw Error('Invalid date.');
+        if(typeof r.dose!=='number'||!Number.isFinite(r.dose)||r.dose<.5||r.dose>6||Math.abs(r.dose*10-Math.round(r.dose*10))>1e-7)throw Error('Invalid dose.');
+        clean[key]={dose:r.dose,injected:true,timestamp:typeof r.timestamp==='string'?r.timestamp.slice(0,40):''};
+      }return clean;
     }
-
-    function saveStorage() {
-      allUserData[currentUser] = historyData;
-      localStorage.setItem('reta_users_data_v3', JSON.stringify(allUserData));
-      localStorage.setItem('reta_active_user_v3', currentUser);
+    function loadStorage(){
+      const saved=localStorage.getItem(STORAGE_KEY);
+      if(saved!==null){try{historyData=validateHistory(JSON.parse(saved));}catch(e){alert('Local data could not be read. Original storage remains unchanged.');}return;}
+      const old=localStorage.getItem('reta_users_data_v3');
+      if(old){try{const users=JSON.parse(old),profile=localStorage.getItem('reta_active_user_v3')==='Marc'?'Marc':'Simon';historyData=validateHistory(Object.fromEntries(Object.entries(users?.[profile]||{}).filter(([,r])=>r?.injected===true)));saveStorage();}catch(e){alert('Old records could not be migrated. Original storage is unchanged.');}}
     }
-
-    function switchUser(userName) {
-      if (userName === currentUser) return;
-
-      allUserData[currentUser] = historyData;
-      currentUser = userName;
-      historyData = allUserData[currentUser] || {};
-      
-      activeLinkedDateKey = null;
-      document.getElementById('doseBanner').style.display = 'none';
-      document.getElementById('serumBanner').style.display = 'none';
-
-      saveStorage();
-      updateUserTheme();
-      updateUI();
+    function saveStorage(){localStorage.setItem(STORAGE_KEY,JSON.stringify(historyData));}
+    function exportData(){
+      const data={app:'my little RETA tracker',version:1,exportedAt:new Date().toISOString(),records:historyData};
+      const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+      const a=document.createElement('a');a.href=url;a.download='reta-tracker-backup-'+formatDateKey(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
-
-    function updateUserTheme() {
-      const btnSimon = document.getElementById('userBtnSimon');
-      const btnMarc = document.getElementById('userBtnMarc');
-      const root = document.documentElement;
-
-      if (currentUser === 'Simon') {
-        btnSimon.classList.add('active');
-        btnMarc.classList.remove('active');
-
-        root.style.setProperty('--theme-primary', 'var(--simon-primary)');
-        root.style.setProperty('--theme-secondary', 'var(--simon-secondary)');
-        root.style.setProperty('--theme-point', 'var(--simon-point)');
-      } else {
-        btnMarc.classList.add('active');
-        btnSimon.classList.remove('active');
-
-        root.style.setProperty('--theme-primary', 'var(--marc-primary)');
-        root.style.setProperty('--theme-secondary', 'var(--marc-secondary)');
-        root.style.setProperty('--theme-point', 'var(--marc-point)');
-      }
-
-      document.getElementById('historyCardTitle').innerText = `${currentUser}'s Dosage History`;
+    async function importData(event){
+      const input=event.target,file=input.files?.[0];if(!file)return;
+      try{
+        if(file.size>5*1024*1024)throw Error('Backup too large.');
+        const json=JSON.parse(await file.text());
+        let records;
+        if(json?.app==='my little RETA tracker'&&json?.version===1)records=json.records;
+        else if(json?.Simon&&json?.Marc)records=json[localStorage.getItem('reta_active_user_v3')==='Marc'?'Marc':'Simon'];
+        else throw Error('Unsupported backup format.');
+        const restored=validateHistory(records);
+        if(!confirm('Replace this phone\'s records with '+Object.keys(restored).length+' imported records? Export your current records first if needed.'))return;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(restored));historyData=restored;selectedDate=new Date();activeLinkedDateKey=null;updateUI();alert('Import successful.');
+      }catch(e){alert('Import failed: '+e.message+' Your data was not changed.');}finally{input.value='';}
     }
 
     function shiftDay(days) {
@@ -1165,6 +1121,7 @@
     }
 
     function applySuggestedDose(type) {
+      if(isSelectedDateInjected())return;
       const dose = type === 'maintain' ? suggestedMaintainDose : suggestedIncreaseDose;
       document.getElementById('doseSlider').value = dose;
       onSliderChange(dose);
@@ -1209,18 +1166,7 @@
 
     function updateUI() {
       const dateKey = formatDateKey(selectedDate);
-      const todayKey = formatDateKey(new Date());
-
-      document.getElementById('dateDisplay').innerHTML = `<span>${formatDateDisplay(selectedDate)}</span> 📅`;
-
-      const subEl = document.getElementById('dateSub');
-      if (dateKey === todayKey) {
-        subEl.innerText = '✨ Today (Tap for calendar)';
-        subEl.style.color = 'var(--theme-primary)';
-      } else {
-        subEl.innerText = '📅 Tap to change date';
-        subEl.style.color = 'var(--text-secondary)';
-      }
+      document.getElementById('dateDisplay').innerHTML=`<span>${formatDateDisplay(selectedDate)}</span> 📅`;
 
       const record = historyData[dateKey] || null;
       let doseVal = 2.0;
@@ -1233,6 +1179,8 @@
 
       document.getElementById('doseVal').innerText = doseVal.toFixed(1);
       document.getElementById('doseSlider').value = doseVal;
+      for(const id of ['doseSlider','doseMinus','dosePlus'])document.getElementById(id).disabled=isInjected;
+      document.querySelectorAll('.suggestion-card').forEach(el=>el.classList.toggle('is-locked',isInjected));
 
       const btn = document.getElementById('injectBtn');
       const icon = document.getElementById('injectIcon');
@@ -1255,7 +1203,9 @@
       renderSerumChart();
     }
 
+    function isSelectedDateInjected(){return historyData[formatDateKey(selectedDate)]?.injected===true;}
     function adjustDose(delta) {
+      if(isSelectedDateInjected())return;
       let currentVal = parseFloat(document.getElementById('doseSlider').value);
       let newVal = Math.min(6.0, Math.max(0.5, currentVal + delta));
       newVal = Math.round(newVal * 10) / 10;
@@ -1264,18 +1214,9 @@
       onSliderChange(newVal);
     }
 
-    function onSliderChange(val) {
-      const dose = parseFloat(val);
-      document.getElementById('doseVal').innerText = dose.toFixed(1);
-      updateActiveLoadDisplay();
-
-      const dateKey = formatDateKey(selectedDate);
-      if (historyData[dateKey] && historyData[dateKey].injected) {
-        historyData[dateKey].dose = dose;
-        saveStorage();
-        renderDoseChart();
-        renderSerumChart();
-      }
+    function onSliderChange(val){
+      if(isSelectedDateInjected()){document.getElementById('doseSlider').value=historyData[formatDateKey(selectedDate)].dose;return;}
+      const dose=parseFloat(val);document.getElementById('doseVal').innerText=dose.toFixed(1);updateActiveLoadDisplay();
     }
 
     function toggleInjection() {
@@ -1478,7 +1419,7 @@
         .sort();
 
       if (allInjectedKeys.length === 0) {
-        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injected dosages recorded for ${currentUser} yet.</div>`;
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injected dosages recorded yet.</div>`;
         return;
       }
 
@@ -1536,8 +1477,8 @@
       const zeroY = paddingTop + chartH;
       const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
 
-      const activePointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
-      const activeLineColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
+      const activePointColor = true ? '#00f5d4' : '#ffbe0b';
+      const activeLineColor = true ? '#3a86ff' : '#8338ec';
 
       const step = (maxDose - minDose) / 3;
       const ticks = [minDose, minDose + step, minDose + (2 * step), maxDose];
@@ -1654,8 +1595,8 @@
       const zeroY = paddingTop + chartH;
       const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
 
-      const strokeColor = currentUser === 'Simon' ? '#3a86ff' : '#8338ec';
-      const pointColor = currentUser === 'Simon' ? '#00f5d4' : '#ffbe0b';
+      const strokeColor = true ? '#3a86ff' : '#8338ec';
+      const pointColor = true ? '#00f5d4' : '#ffbe0b';
 
       const serumScaleSteps = [0, maxSerumAxis * 0.33, maxSerumAxis * 0.66, maxSerumAxis];
 
