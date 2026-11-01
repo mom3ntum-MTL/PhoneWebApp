@@ -1019,7 +1019,7 @@
       if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Invalid backup.');
       const clean={};
       for(const [key,r] of Object.entries(data)){
-        if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(key)||!r||r.injected!==true)throw Error('Invalid injection record.');
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(key)||!r||r.injected!==true)throw Error('Invalid injection record.');
         const [y,m,d]=key.split('-').map(Number),dt=new Date(y,m-1,d);
         if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d)throw Error('Invalid date.');
         if(typeof r.dose!=='number'||!Number.isFinite(r.dose)||r.dose<.5||r.dose>6||Math.abs(r.dose*10-Math.round(r.dose*10))>1e-7)throw Error('Invalid dose.');
