@@ -872,10 +872,10 @@
     </div>
   </div>
 
-  <!-- Estimated Active Dosage Card (Moved Down: Between Suggested & Target Dosage Zones) -->
+  <!-- Estimated Active Dosage Card -->
   <div class="card active-dose-card" id="actualActiveCard">
     <div class="card-label">
-      <span>Actual Active Dosage</span>
+      <span>Estimated Active Dosage</span>
       <span id="activeLoadStatusPill" class="serum-badge pill-mod">Target Active</span>
     </div>
     
@@ -1430,7 +1430,7 @@
       let filteredKeys = allInjectedKeys.filter(k => k >= cutoffKey);
 
       if (filteredKeys.length === 0) {
-        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injections in past ${currentDaysFilter === 30 ? '1 Month' : currentDaysFilter === 90 ? '3 Months' : '6 Months'} for ${currentUser}.</div>`;
+        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injections in past ${currentDaysFilter === 30 ? '1 Month' : currentDaysFilter === 90 ? '3 Months' : '6 Months'}.</div>`;
         return;
       }
 
@@ -1477,8 +1477,8 @@
       const zeroY = paddingTop + chartH;
       const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
 
-      const activePointColor = true ? '#00f5d4' : '#ffbe0b';
-      const activeLineColor = true ? '#3a86ff' : '#8338ec';
+      const activePointColor = '#00f5d4';
+      const activeLineColor = '#3a86ff';
 
       const step = (maxDose - minDose) / 3;
       const ticks = [minDose, minDose + step, minDose + (2 * step), maxDose];
