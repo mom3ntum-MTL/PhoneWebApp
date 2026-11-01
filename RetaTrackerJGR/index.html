@@ -622,6 +622,10 @@
       border-radius: 10px;
       cursor: pointer;
     }
+
+    .backup-actions { display:flex; gap:12px; }
+    .backup-btn { flex:1; padding:14px 12px; border:1px solid var(--border-color); border-radius:14px; background:var(--bg-input); color:var(--text-primary); font-size:.92rem; font-weight:700; cursor:pointer; touch-action:manipulation; }
+    .backup-note { font-size:.76rem; color:var(--text-secondary); line-height:1.5; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -724,6 +728,17 @@
     </div>
   </div>
 
+  <!-- Backup migration controls -->
+  <div class="card">
+    <div class="card-label">Backup & Restore</div>
+    <div class="backup-actions">
+      <button type="button" class="backup-btn" onclick="exportRetaData()">Export data</button>
+      <button type="button" class="backup-btn" onclick="document.getElementById('importRetaFile').click()">Import data</button>
+    </div>
+    <input type="file" id="importRetaFile" accept=".json,application/json" hidden onchange="importRetaData(event)">
+    <div class="backup-note">Exports the currently selected person's records. Completed injections transfer to the new tracker. Pending entries remain in the backup for restoring to this older app. Store the downloaded JSON file somewhere safe.</div>
+  </div>
+
   <!-- Calendar Picker Modal -->
   <div id="calendarModal" class="modal-overlay" onclick="closeCalendarOnOverlay(event)">
     <div class="calendar-card">
@@ -814,6 +829,71 @@
       allUserData[currentUser] = historyData;
       localStorage.setItem('reta_users_data_v4', JSON.stringify(allUserData));
       localStorage.setItem('reta_active_user_v4', currentUser);
+    }
+
+    // Export the currently selected profile in the new tracker's compatible format.
+    // Pending entries are retained separately for safe restoration to this app.
+    function exportRetaData() {
+      const records = {}, pendingRecords = {};
+      for (const [date, record] of Object.entries(historyData)) {
+        if (!record || typeof record.dose !== 'number' || !Number.isFinite(record.dose)) continue;
+        const copy = { dose: record.dose, injected: record.injected === true, timestamp: typeof record.timestamp === 'string' ? record.timestamp : '' };
+        if (copy.injected) records[date] = copy;
+        else pendingRecords[date] = copy;
+      }
+      const payload = {
+        app: 'my little RETA tracker', version: 1, exportedAt: new Date().toISOString(),
+        source: 'RetaTrackerJGR', profile: currentUser, records, pendingRecords
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'reta-JGR-' + currentUser.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + formatDateKey(new Date()) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function validateBackupEntries(source, expectedInjected) {
+      if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error('Invalid backup records.');
+      const verified = {};
+      for (const [date, entry] of Object.entries(source)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !entry || entry.injected !== expectedInjected) throw new Error('Invalid record in backup.');
+        const [y,m,d] = date.split('-').map(Number);
+        const check = new Date(y, m - 1, d);
+        if (check.getFullYear() !== y || check.getMonth() !== m - 1 || check.getDate() !== d) throw new Error('Invalid date in backup.');
+        if (typeof entry.dose !== 'number' || !Number.isFinite(entry.dose) || entry.dose < 0.5 || entry.dose > 6 || Math.abs(entry.dose * 10 - Math.round(entry.dose * 10)) > 1e-7) throw new Error('Invalid dose in backup.');
+        verified[date] = { dose: entry.dose, injected: expectedInjected, timestamp: typeof entry.timestamp === 'string' ? entry.timestamp.slice(0,40) : '' };
+      }
+      return verified;
+    }
+
+    async function importRetaData(event) {
+      const input = event.target, file = input.files?.[0];
+      if (!file) return;
+      try {
+        if (file.size > 5 * 1024 * 1024) throw new Error('Backup file is too large.');
+        const payload = JSON.parse(await file.text());
+        if (payload?.app !== 'my little RETA tracker' || payload?.version !== 1) throw new Error('Unsupported backup format.');
+        const completed = validateBackupEntries(payload.records, true);
+        const pending = payload.pendingRecords ? validateBackupEntries(payload.pendingRecords, false) : {};
+        for (const date of Object.keys(pending)) if (date in completed) throw new Error('Duplicate record date.');
+        const restored = { ...completed, ...pending };
+        if (!confirm('Replace the records for ' + currentUser + ' with ' + Object.keys(restored).length + ' entries from this backup?')) return;
+        const updated = { ...allUserData, [currentUser]: restored };
+        localStorage.setItem('reta_users_data_v4', JSON.stringify(updated));
+        localStorage.setItem('reta_active_user_v4', currentUser);
+        allUserData = updated;
+        historyData = restored;
+        updateUI();
+        alert('Import successful.');
+      } catch (err) {
+        alert('Import failed: ' + err.message + ' Existing data was not changed.');
+      } finally {
+        input.value = '';
+      }
     }
 
     function switchUser(userName) {
