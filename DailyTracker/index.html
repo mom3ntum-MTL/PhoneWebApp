@@ -6,9 +6,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="My Habit Tracker">
+  <meta name="apple-mobile-web-app-title" content="my little HABITS tracker">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
   <meta name="theme-color" content="#f8fafc">
-  <title>My Habit Tracker</title>
+  <title>my little HABITS tracker</title>
   
   <style>
     :root {
@@ -335,7 +338,7 @@
 
     .quote-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      border: 2px solid #0d9488;
       border-radius: 18px;
       padding: 16px 18px;
       margin-bottom: 16px;
@@ -344,13 +347,7 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .quote-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      width: 4px;
-      background: linear-gradient(180deg, #059669, #2563eb);
-    }
+    .quote-card::before { display:none; }
 
     .quote-text {
       font-size: 0.88rem;
@@ -714,17 +711,24 @@
     .save-btn:active {
       transform: scale(0.98);
     }
+    .date-label-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .date-label-row .card-label { margin:0; }
+    .date-label-row .progress-badge { white-space:nowrap; padding:5px 10px; }
+    .tracker-section-heading { font-size:.78rem; font-weight:800; color:var(--text-secondary); margin:12px 2px 6px; }
+    .tracker-move-controls { display:flex; gap:5px; margin-left:auto; margin-right:10px; }
+    .tracker-move-btn { border:1px solid var(--border-color); background:white; border-radius:9px; width:32px; height:32px; font-size:1rem; cursor:pointer; color:var(--text-primary); touch-action:manipulation; }
+    .tracker-move-btn:disabled { opacity:.25; cursor:default; }
+    .tracker-toggle-item .toggle-left { min-width:0; flex:1; }
+    .tracker-toggle-item .toggle-name { overflow-wrap:anywhere; }
+    .tracker-toggle-item.inactive { opacity:.72; }
   </style>
 </head>
 <body>
 
   <!-- Header -->
   <header>
-    <div class="header-left">
-      <div class="app-title">MY HABIT TRACKER</div>
-      <button class="btn-settings" onclick="openTrackerModal()" title="Manage Local Trackers">⚙️</button>
-    </div>
-    <div id="progressBadge" class="progress-badge">0 / 0 Done</div>
+    <div class="app-title">my little HABITS tracker</div>
+    <button class="btn-settings" onclick="openTrackerModal()" title="Manage Active Trackers" aria-label="Manage Active Trackers">⚙️</button>
   </header>
 
   <!-- Daily Quote Card -->
@@ -754,7 +758,7 @@
 
   <!-- Date Selector Card -->
   <div class="card">
-    <div class="card-label">Log Date</div>
+    <div class="date-label-row"><div class="card-label">Log Date</div><div id="progressBadge" class="progress-badge">0 / 0 Done</div></div>
     <div class="date-row">
       <button onclick="shiftDay(-1)" class="date-nav-btn">‹</button>
       <div style="text-align: center;">
@@ -805,12 +809,12 @@
       { id: 'gym', name: 'Daily Gym', icon: '🏋️', color: '#e11d48', letter: 'G', days: [0,1,2,3,4,5,6] },
       { id: 'snap8', name: 'SNAP-8 Cream', icon: '✨', color: '#9333ea', letter: 'S', type: 'dual_check', days: [0,1,2,3,4,5,6] },
       { id: 'meditation', name: 'Daily Meditation', icon: '🧘', color: '#2563eb', letter: 'M', days: [0,1,2,3,4,5,6] },
-      { id: 'water', name: 'Hydration (2L Target)', icon: '💧', color: '#0284c7', letter: 'H', type: 'cups', maxCups: 8, minCupsComplete: 4, days: [0,1,2,3,4,5,6] },
+      { id: 'water', name: 'Hydration (1L min, 2L target)', icon: '💧', color: '#0284c7', letter: 'H', type: 'cups', maxCups: 8, minCupsComplete: 4, days: [0,1,2,3,4,5,6] },
       { id: 'moodEnergy', name: 'Mood & Energy', icon: '🙂', color: '#ea580c', letter: 'Mo', type: 'scale', scaleMax: 5, days: [0,1,2,3,4,5,6] },
       { id: 'noAlcohol', name: 'No Alcohol Today', icon: '🚫', color: '#dc2626', letter: 'No', days: [0,1,2,3,4,5,6] },
       { id: 'sleepScore', name: 'Sleep Score 85%+', icon: '😴', color: '#059669', letter: 'Z', days: [0,1,2,3,4,5,6] },
-      { id: 'compost', name: 'Take Compost Out', icon: '♻️', color: '#65a30d', letter: 'C', days: [1] }, // Monday
-      { id: 'trash', name: 'Take Trash & Recycling Out', icon: '🗑️', color: '#ca8a04', letter: 'T', days: [4] } // Thursday
+      { id: 'compost', name: 'Take Compost Out', icon: '♻️', color: '#65a30d', letter: 'C', days: [2], timeOfDay: 'Morning' }, // Tuesday
+      { id: 'trash', name: 'Take Trash & Recycling Out', icon: '🗑️', color: '#ca8a04', letter: 'T', days: [5], timeOfDay: 'Morning' } // Friday
     ];
 
     const QUOTES = [
@@ -831,6 +835,9 @@
 
     let selectedDate = new Date();
     let trackerData = {};
+    let trackerOrder = ALL_HABITS.map(h => h.id);
+    let draftTrackerOrder = [];
+    let draftEnabledHabits = {};
     let enabledHabits = {}; // Map of habitId -> boolean
 
     function dayOfYear(dateObj) {
@@ -848,7 +855,7 @@
 
     function getEnabledHabitsForDate(dateObj) {
       const dayOfWeek = dateObj.getDay();
-      return ALL_HABITS.filter(h => h.days.includes(dayOfWeek) && enabledHabits[h.id] !== false);
+      return trackerOrder.map(id => ALL_HABITS.find(h => h.id === id)).filter(h => h && h.days.includes(dayOfWeek) && enabledHabits[h.id] !== false);
     }
 
     function formatDateKey(dateObj) {
@@ -881,10 +888,15 @@
         // Default: all habits enabled
         ALL_HABITS.forEach(h => enabledHabits[h.id] = true);
       }
+      try {
+        const savedOrder = JSON.parse(localStorage.getItem('daily_habits_order_v1') || '[]');
+        if (Array.isArray(savedOrder)) trackerOrder = [...new Set(savedOrder.filter(id => ALL_HABITS.some(h => h.id === id))), ...ALL_HABITS.map(h => h.id).filter(id => !savedOrder.includes(id))];
+      } catch (e) { trackerOrder = ALL_HABITS.map(h => h.id); }
     }
 
     function savePreferences() {
       localStorage.setItem('daily_habits_enabled_v3', JSON.stringify(enabledHabits));
+      localStorage.setItem('daily_habits_order_v1', JSON.stringify(trackerOrder));
     }
 
     function loadStorage() {
@@ -1049,10 +1061,7 @@
           if (habit.type === 'cups') {
             const cupsLogged = typeof rawValue === 'number' ? rawValue : 0;
             const litersLogged = (cupsLogged * 0.25).toFixed(2);
-            let subText = `${litersLogged}L / 2L (${cupsLogged}/8 cups)`;
-            if (cupsLogged >= 8) subText += ' - 2L Goal Met!';
-            else if (cupsLogged >= 4) subText += ' - 1L Met (Done)';
-            else subText += ' - Tap cups to log (4 cups = 1L min)';
+            const subText = `${cupsLogged}/8 cups · ${litersLogged} / 2.00 L`;
 
             let cupsHtml = '';
             for (let c = 1; c <= 8; c++) {
@@ -1089,10 +1098,7 @@
             });
           } else if (habit.type === 'dual_check') {
             const dualVal = (typeof rawValue === 'object' && rawValue) ? rawValue : { am: false, pm: false };
-            let subText = 'Tap AM and PM when applied';
-            if (dualVal.am && dualVal.pm) subText = 'Completed (AM & PM)';
-            else if (dualVal.am) subText = 'AM Done (PM Pending)';
-            else if (dualVal.pm) subText = 'PM Done (AM Pending)';
+            const subText = 'Apply BID';
 
             card.innerHTML = `
               <div class="habit-main-row">
@@ -1173,7 +1179,7 @@
                   </div>
                   <div>
                     <div class="habit-name">${habit.name}</div>
-                    <div class="habit-sub">${isDone ? 'Completed' : 'Tap to mark done'}</div>
+                    <div class="habit-sub">${habit.timeOfDay ? habit.timeOfDay + ' · ' : ''}${isDone ? 'Completed' : 'Tap to mark done'}</div>
                   </div>
                 </div>
                 <div class="check-circle" style="${isDone ? `background: ${habit.color};` : ''}">
@@ -1319,27 +1325,56 @@
     }
 
     function openTrackerModal() {
-      const modalBody = document.getElementById('modalBody');
-      modalBody.innerHTML = '';
-
-      ALL_HABITS.forEach(h => {
-        const isEnabled = enabledHabits[h.id] !== false;
-        const item = document.createElement('div');
-        item.className = 'tracker-toggle-item';
-        item.innerHTML = `
-          <div class="toggle-left">
-            <span class="toggle-icon">${h.icon}</span>
-            <span class="toggle-name">${h.name}</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="toggle_${h.id}" ${isEnabled ? 'checked' : ''}>
-            <span class="slider"></span>
-          </label>
-        `;
-        modalBody.appendChild(item);
-      });
-
+      draftTrackerOrder = [...trackerOrder];
+      draftEnabledHabits = Object.fromEntries(ALL_HABITS.map(h => [h.id, enabledHabits[h.id] !== false]));
+      renderTrackerModal();
       document.getElementById('trackerModal').classList.add('active');
+    }
+
+    function renderTrackerModal() {
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '';
+      for (const [enabled, label] of [[true, 'Active Trackers'], [false, 'Inactive Trackers']]) {
+        const ids = draftTrackerOrder.filter(id => draftEnabledHabits[id] === enabled);
+        const heading = document.createElement('div');
+        heading.className = 'tracker-section-heading';
+        heading.textContent = label + ' (' + ids.length + ')';
+        body.appendChild(heading);
+        ids.forEach((id, index) => {
+          const h = ALL_HABITS.find(h => h.id === id);
+          const item = document.createElement('div');
+          item.className = 'tracker-toggle-item' + (enabled ? '' : ' inactive');
+          item.innerHTML = `
+            <div class="toggle-left">
+              <span class="toggle-icon">${h.icon}</span><span class="toggle-name">${h.name}</span>
+            </div>
+            <div class="tracker-move-controls">
+              <button type="button" class="tracker-move-btn move-up" aria-label="Move ${h.name} up" ${index === 0 ? 'disabled' : ''}>↑</button>
+              <button type="button" class="tracker-move-btn move-down" aria-label="Move ${h.name} down" ${index === ids.length - 1 ? 'disabled' : ''}>↓</button>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle_${h.id}" ${enabled ? 'checked' : ''} aria-label="Enable ${h.name}">
+              <span class="slider"></span>
+            </label>`;
+          item.querySelector('input').addEventListener('change', e => {
+            draftEnabledHabits[id] = e.target.checked;
+            renderTrackerModal();
+          });
+          item.querySelector('.move-up').addEventListener('click', () => moveTracker(id, -1));
+          item.querySelector('.move-down').addEventListener('click', () => moveTracker(id, 1));
+          body.appendChild(item);
+        });
+      }
+    }
+
+    function moveTracker(id, direction) {
+      const enabled = draftEnabledHabits[id];
+      const peers = draftTrackerOrder.filter(key => draftEnabledHabits[key] === enabled);
+      const swapId = peers[peers.indexOf(id) + direction];
+      if (!swapId) return;
+      const a = draftTrackerOrder.indexOf(id), b = draftTrackerOrder.indexOf(swapId);
+      [draftTrackerOrder[a], draftTrackerOrder[b]] = [draftTrackerOrder[b], draftTrackerOrder[a]];
+      renderTrackerModal();
     }
 
     function closeTrackerModal(e) {
@@ -1348,19 +1383,13 @@
     }
 
     function toggleAllTrackers(enable) {
-      ALL_HABITS.forEach(h => {
-        const chk = document.getElementById(`toggle_${h.id}`);
-        if (chk) chk.checked = enable;
-      });
+      ALL_HABITS.forEach(h => { draftEnabledHabits[h.id] = enable; });
+      renderTrackerModal();
     }
 
     function saveTrackerPreferences() {
-      ALL_HABITS.forEach(h => {
-        const chk = document.getElementById(`toggle_${h.id}`);
-        if (chk) {
-          enabledHabits[h.id] = chk.checked;
-        }
-      });
+      enabledHabits = { ...draftEnabledHabits };
+      trackerOrder = [...draftTrackerOrder.filter(id => enabledHabits[id] !== false), ...draftTrackerOrder.filter(id => enabledHabits[id] === false)];
       savePreferences();
       closeTrackerModal();
       updateUI();
