@@ -1,175 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="App Hub" />
-  <meta name="theme-color" content="#0b132b" />
-  <title>Personal App Hub</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="my little APPS">
+  <title>my little APPS</title>
   <style>
     :root {
-      --bg-main: #0b132b;
-      --bg-card: #1c2541;
-      --accent-green: #06d6a0;
-      --accent-blue: #3a86ff;
-      --text-primary: #ffffff;
-      --text-secondary: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
+      color-scheme: light;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #152238;
+      --muted: #64748b;
+      --line: #e2e8f0;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-main);
-      color: var(--text-primary);
+      margin: 0;
       min-height: 100vh;
-      padding: 24px 16px;
-      max-width: 480px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      min-height: 100dvh;
+      padding: max(36px, env(safe-area-inset-top)) 20px max(30px, env(safe-area-inset-bottom));
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: grid;
+      place-items: center;
     }
-
-    header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .app-title {
-      font-size: 1.6rem;
+    main { width: 100%; max-width: 440px; }
+    header { text-align: center; margin-bottom: 30px; }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 6vw, 2.15rem);
       font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #06d6a0, #3a86ff);
+      letter-spacing: -0.045em;
+      background: linear-gradient(110deg, #059669, #2563eb);
       -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
+      background-clip: text;
+      color: transparent;
     }
-
-    .app-subtitle {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    .app-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .app-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 20px;
+    .subtitle { margin: 9px 0 0; font-size: .91rem; color: var(--muted); }
+    .apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .app {
       text-decoration: none;
       color: inherit;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      min-height: 166px;
+      padding: 22px 12px 18px;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.35);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .app-card:active {
-      transform: scale(0.97);
-    }
-
-    .app-icon-bg {
-      width: 52px;
-      height: 52px;
-      border-radius: 18px;
-      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
-      flex-shrink: 0;
-    }
-
-    .reta .app-icon-bg {
-      background: rgba(58, 134, 255, 0.15);
-      border: 1px solid rgba(58, 134, 255, 0.3);
-    }
-
-    .habits .app-icon-bg {
-      background: rgba(6, 214, 160, 0.15);
-      border: 1px solid rgba(6, 214, 160, 0.3);
-    }
-
-    .app-details {
-      flex: 1;
-    }
-
-    .app-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 3px;
-    }
-
-    .app-desc {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-    }
-
-    .arrow-icon {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      font-weight: 700;
-    }
-
-    footer {
+      gap: 9px;
       text-align: center;
-      margin-top: 40px;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      opacity: 0.6;
+      box-shadow: 0 4px 16px rgba(15,23,42,.035);
+      transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
+    .app:active { transform: scale(.97); }
+    .app:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+    @media (hover: hover) {
+      .app:hover { transform: translateY(-3px); border-color: #b5c8db; box-shadow: 0 12px 24px rgba(15,23,42,.075); }
+    }
+    .symbol {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      font-size: 1.8rem;
+      background: var(--tint);
+    }
+    .app-name { font-size: 1rem; font-weight: 800; letter-spacing: -.015em; }
+    .app-detail { font-size: .76rem; line-height: 1.35; color: var(--muted); }
+    footer { margin-top: 30px; text-align: center; font-size: .75rem; color: #94a3b8; }
+    @media (max-width: 320px) { .apps { gap: 10px; } .app { padding-inline: 8px; } }
+    @media (prefers-reduced-motion: reduce) { .app { transition: none; } }
   </style>
 </head>
 <body>
-
-  <header>
-    <div class="app-title">MY APP HUB</div>
-    <div class="app-subtitle">Select an application to launch</div>
-  </header>
-
-  <div class="app-grid">
-    <!-- Retatrutide Tracker Link -->
-    <a href="./RetaTracker/" class="app-card reta">
-      <div class="app-icon-bg">💉</div>
-      <div class="app-details">
-        <div class="app-name">Reta Tracker</div>
-        <div class="app-desc">Weekly dosage & injection log for Simon & Marc</div>
-      </div>
-      <div class="arrow-icon">›</div>
-    </a>
-
-    <!-- Daily Habit Tracker Link -->
-    <a href="./DailyTracker/" class="app-card habits">
-      <div class="app-icon-bg">⚡</div>
-      <div class="app-details">
-        <div class="app-name">Daily Habit Track</div>
-        <div class="app-desc">Checklist for vitamins, gym, cream & tasks</div>
-      </div>
-      <div class="arrow-icon">›</div>
-    </a>
-  </div>
-
-  <footer>
-    Standalone Local Web Applications
-  </footer>
-
+  <main>
+    <header>
+      <h1>my little APPS</h1>
+      <p class="subtitle">A little home for the things I track and explore.</p>
+    </header>
+    <nav class="apps" aria-label="My applications">
+      <a class="app" href="./DailyTracker/" style="--tint:#e7f7ef">
+        <span class="symbol" aria-hidden="true">✓</span>
+        <span class="app-name">HABITS</span>
+        <span class="app-detail">Daily routines</span>
+      </a>
+      <a class="app" href="./RetaTracker/" style="--tint:#e8f0ff">
+        <span class="symbol" aria-hidden="true">💉</span>
+        <span class="app-name">RETA</span>
+        <span class="app-detail">Dose tracker</span>
+      </a>
+      <a class="app" href="./MedsTracker/" style="--tint:#f1eafe">
+        <span class="symbol" aria-hidden="true">💊</span>
+        <span class="app-name">MEDS</span>
+        <span class="app-detail">Medications</span>
+      </a>
+      <a class="app" href="./UNESCO/" style="--tint:#fff2dd">
+        <span class="symbol" aria-hidden="true">🌍</span>
+        <span class="app-name">UNESCO</span>
+        <span class="app-detail">World heritage</span>
+      </a>
+    </nav>
+    <footer>Made for the little things that matter.</footer>
+  </main>
 </body>
 </html>
