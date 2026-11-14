@@ -260,11 +260,11 @@
     /* Target Dosage Card */
     .dose-value-container {
       text-align: center;
-      margin: 10px 0 18px 0;
+      margin: 4px 0 10px 0;
     }
 
     .dose-num {
-      font-size: 3.8rem;
+      font-size: 2.4rem;
       font-weight: 800;
       line-height: 1;
       color: var(--theme-primary);
@@ -280,6 +280,8 @@
       font-weight: 600;
       margin-left: 2px;
     }
+
+    .target-dose-card { padding-top: 14px; padding-bottom: 14px; }
 
     .dose-controls {
       display: flex;
@@ -831,10 +833,6 @@
   <!-- Suggested Next Dose Card -->
   <div class="card">
     <div class="card-label">Suggested Next Dose</div>
-    <div style="font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px;">
-      Tap a suggestion below to load it into the dosage target:
-    </div>
-
     <div class="suggestion-grid">
       <div class="suggestion-card" onclick="applySuggestedDose('maintain')">
         <div class="sug-title">To Maintain Load</div>
@@ -851,7 +849,7 @@
   </div>
 
   <!-- Target Dosage Slider Card -->
-  <div class="card">
+  <div class="card target-dose-card">
     <div class="card-label">Target Dosage</div>
     <div class="dose-value-container">
       <span id="doseVal" class="dose-num">2.0</span>
@@ -885,7 +883,7 @@
         <span class="active-dose-unit">mg</span>
       </div>
       <div id="liveActiveLoadBreakdown" class="active-dose-sub">
-        Prior active load: <strong>0.00 mg</strong> + Target dose: <strong>2.0 mg</strong>
+        Active load: <strong>0.00 mg</strong> + Target dose: <strong>2.0 mg</strong>
       </div>
     </div>
     <!-- Target Range Reference Guide -->
@@ -989,7 +987,9 @@
 
   <script>
     const STORAGE_KEY='reta_single_user_data_v1';
+    const LAST_TARGET_DOSE_KEY='reta_last_target_dose_v1';
     let selectedDate=new Date(),calViewDate=new Date(),historyData={};
+    let lastTargetDose=2.0;
     let currentDaysFilter = 30;
 
     let suggestedMaintainDose = 2.0;
@@ -1011,6 +1011,10 @@
     }
 
     function init() {
+      const storedTargetDose = Number(localStorage.getItem(LAST_TARGET_DOSE_KEY));
+      if (Number.isFinite(storedTargetDose) && storedTargetDose >= 0.5 && storedTargetDose <= 6.0) {
+        lastTargetDose = Math.round(storedTargetDose * 10) / 10;
+      }
       loadStorage();
       updateUI();
     }
@@ -1146,7 +1150,7 @@
         if (isAlreadyInjected) {
           breakdownEl.innerHTML = `Active on this date: <strong>${baseLoad.toFixed(2)} mg</strong> (prior) + <strong>${currentSliderDose.toFixed(1)} mg</strong> (injected)`;
         } else {
-          breakdownEl.innerHTML = `Prior active load: <strong>${baseLoad.toFixed(2)} mg</strong> + Target dose: <strong>${currentSliderDose.toFixed(1)} mg</strong>`;
+          breakdownEl.innerHTML = `Active load: <strong>${baseLoad.toFixed(2)} mg</strong> + Target dose: <strong>${currentSliderDose.toFixed(1)} mg</strong>`;
         }
       }
 
@@ -1169,7 +1173,7 @@
       document.getElementById('dateDisplay').innerHTML=`<span>${formatDateDisplay(selectedDate)}</span> 📅`;
 
       const record = historyData[dateKey] || null;
-      let doseVal = 2.0;
+      let doseVal = lastTargetDose;
       let isInjected = false;
 
       if (record && record.injected) {
@@ -1216,7 +1220,12 @@
 
     function onSliderChange(val){
       if(isSelectedDateInjected()){document.getElementById('doseSlider').value=historyData[formatDateKey(selectedDate)].dose;return;}
-      const dose=parseFloat(val);document.getElementById('doseVal').innerText=dose.toFixed(1);updateActiveLoadDisplay();
+      const dose=parseFloat(val);
+      if (!Number.isFinite(dose) || dose < 0.5 || dose > 6.0) return;
+      lastTargetDose = Math.round(dose * 10) / 10;
+      localStorage.setItem(LAST_TARGET_DOSE_KEY, String(lastTargetDose));
+      document.getElementById('doseVal').innerText=lastTargetDose.toFixed(1);
+      updateActiveLoadDisplay();
     }
 
     function toggleInjection() {
