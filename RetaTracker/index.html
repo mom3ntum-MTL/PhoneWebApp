@@ -1590,20 +1590,6 @@
 
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
-        if (idx !== dailyPoints.length - 1 && p.date.getDate() !== 1 && p.date.getDate() !== 15) return;
-        const text = `${p.date.getMonth() + 1}/${p.date.getDate()}`;
-        if (idx === dailyPoints.length - 1) return;
-        if (Math.abs(todayX - x) < minLabelGap) return;
-        if (labels.some(label => Math.abs(label.x - x) < minLabelGap)) return;
-        labels.push({x, text});
-      });
-      labels.push({x:todayX,text:`${today.getMonth() + 1}/${today.getDate()}`,isToday:true});
-      labels.forEach(label => {
-        svgHtml += `<text x="${label.isToday ? width - paddingRight - 5 : label.x}" y="${height - 6}" text-anchor="${label.isToday ? 'end' : 'middle'}" class="chart-axis-label">${label.text}</text>`;
-      });
-
-      dailyPoints.forEach((p, idx) => {
-        const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
         const isSelected = (activeLinkedDateKey === p.key);
 
