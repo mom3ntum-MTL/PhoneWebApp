@@ -764,6 +764,16 @@
       background: var(--theme-point);
     }
 
+    .cal-day-cell.injection-day:not(.selected) {
+      background: color-mix(in srgb, var(--theme-point) 12%, var(--bg-card));
+      box-shadow: inset 0 0 0 1.5px var(--theme-point);
+      border-radius: 12px;
+    }
+
+    .cal-day-cell.injection-day.today:not(.selected) {
+      border: 2px solid var(--theme-primary);
+    }
+
     .cal-day-cell.selected .cal-dot {
       background: #ffffff !important;
     }
@@ -806,7 +816,7 @@
 .target-ranges-box{margin-top:16px}
     .serum-chart-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
     .serum-chart-title{font-size:.9rem;letter-spacing:.8px;margin:0}
-    .serum-chart-heading .time-filter{align-self:flex-start}
+    .serum-chart-heading .time-filter{align-self:flex-start;flex-wrap:wrap}
     .serum-scroll-chart{overflow-x:auto;overflow-y:hidden;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto;scrollbar-width:thin;scroll-behavior:auto}
     .serum-scroll-chart svg.chart-svg{display:block;height:200px;touch-action:pan-x pan-y}
     .serum-chart-hint{margin-top:8px;font-size:.7rem;text-align:center;color:var(--text-secondary)}
@@ -925,6 +935,7 @@
         <button id="serumFilter30" class="filter-btn active" onclick="syncTimeFilter(30)">1 Month</button>
         <button id="serumFilter90" class="filter-btn" onclick="syncTimeFilter(90)">3 Months</button>
         <button id="serumFilter180" class="filter-btn" onclick="syncTimeFilter(180)">6 Months</button>
+        <button id="serumFilter365" class="filter-btn" onclick="syncTimeFilter(365)">12 Months</button>
       </div>
     </div>
     <!-- Active Click Value Banner for Serum Load -->
@@ -935,7 +946,7 @@
 
     <div id="serumDoseBanner" class="graph-tooltip-banner" style="display:none" aria-live="polite"><span class="banner-date">Injected Dose</span><span id="serumDoseBannerVal" class="banner-val">--</span></div>
     <div id="serumChartWrapper" class="chart-container serum-scroll-chart" aria-label="Scrollable serum chart"></div>
-    <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 months</div>
+    <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 / 12 months</div>
 
     <div class="info-note">
       💡 <strong>Pharmacokinetics:</strong> Active serum level is estimated in effective cumulative mg based on the ~6-day (144 hr) elimination half-life (T½) of Retatrutide.
@@ -1309,6 +1320,7 @@
         let classes = 'cal-day-cell';
         if (cellKey === selectedKey) classes += ' selected';
         if (cellKey === todayKey) classes += ' today';
+        if (historyData[cellKey]?.injected) classes += ' injection-day';
         cell.className = classes;
         cell.innerText = d;
 
@@ -1371,10 +1383,10 @@
         const ratio = distance(event.touches) / Math.max(1, startDistance);
         if (ratio > 1.18 || ratio < 0.85) {
           gestureConsumed = true;
-          const ranges = [30, 90, 180];
+          const ranges = [30, 90, 180, 365];
           const index = ranges.indexOf(currentDaysFilter);
           // Spread -> zoom in (fewer days); pinch together -> zoom out.
-          const next = ranges[Math.max(0, Math.min(2, index + (ratio < 1 ? 1 : -1)))];
+          const next = ranges[Math.max(0, Math.min(ranges.length - 1, index + (ratio < 1 ? 1 : -1)))];
           if (next !== currentDaysFilter) syncTimeFilter(next);
         }
       }, {passive: false});
@@ -1389,10 +1401,10 @@
       chart.addEventListener('touchcancel', reset, {passive: true});
     }
     function syncTimeFilter(days) {
-      if(![30,90,180].includes(days)) return;
+      if(![30,90,180,365].includes(days)) return;
       const changed=currentDaysFilter !== days;
       currentDaysFilter=days;
-      [30,90,180].forEach(n=>{
+      [30,90,180,365].forEach(n=>{
         const btn=document.getElementById('serumFilter'+n);
         btn.classList.toggle('active',n===days);
         btn.setAttribute('aria-pressed',String(n===days));
@@ -1459,7 +1471,7 @@
       const viewportWidth = chartWrapper.clientWidth || 380;
       // Different time ranges also have different visible day density.
       // Preserve horizontal panning in every mode while making 1/3/6 months visually distinct.
-      const spanFactor = totalDays === 30 ? 1.35 : totalDays === 90 ? 1.85 : 2.35;
+      const spanFactor = totalDays === 30 ? 1.35 : totalDays === 90 ? 1.85 : totalDays === 180 ? 2.35 : 3.1;
       const width = Math.ceil(viewportWidth * spanFactor);
       const height = 200;
 
@@ -1520,7 +1532,7 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      const stepLabel = totalDays === 30 ? 5 : totalDays === 90 ? 10 : 20;
+      const stepLabel = totalDays === 30 ? 5 : totalDays === 90 ? 10 : totalDays === 180 ? 20 : 40;
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
