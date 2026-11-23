@@ -804,7 +804,13 @@
 .backup-actions{display:flex;gap:12px}.backup-btn{flex:1;padding:14px 10px;border-radius:14px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-primary);font-weight:700;cursor:pointer}
 .backup-note{margin-top:10px;font-size:.76rem;color:var(--text-secondary);line-height:1.5}
 .target-ranges-box{margin-top:16px}
-</style>
+    .serum-chart-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
+    .serum-chart-title{font-size:.9rem;letter-spacing:.8px;margin:0}
+    .serum-chart-heading .time-filter{align-self:flex-start}
+    .serum-scroll-chart{overflow-x:auto;overflow-y:hidden;touch-action:pan-x;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scroll-behavior:smooth}
+    .serum-scroll-chart svg.chart-svg{display:block;height:200px}
+    .serum-chart-hint{margin-top:8px;font-size:.7rem;text-align:center;color:var(--text-secondary)}
+  </style>
 </head>
 <body>
 
@@ -911,50 +917,28 @@
     <span id="injectText">Mark as Injected</span>
   </button>
 
-  <!-- Graphic 1: Logged Dosage History -->
-  <div class="card" style="padding-bottom: 14px;">
-    <div class="graph-header">
-      <div class="card-label" style="margin: 0;" id="historyCardTitle">Dosage History</div>
-      <div class="time-filter">
-        <button id="doseFilter30" class="filter-btn active" onclick="syncTimeFilter(30)">1 Month</button>
-        <button id="doseFilter90" class="filter-btn" onclick="syncTimeFilter(90)">3 Months</button>
-        <button id="doseFilter180" class="filter-btn" onclick="syncTimeFilter(180)">6 Months</button>
-      </div>
-    </div>
-
-    <!-- Active Click Value Banner for Dosage History -->
-    <div id="doseBanner" class="graph-tooltip-banner" style="display: none;">
-      <span id="doseBannerDate" class="banner-date">--</span>
-      <span id="doseBannerVal" class="banner-val">--</span>
-    </div>
-
-    <div id="doseChartWrapper" class="chart-container"></div>
-  </div>
-
   <!-- Graphic 2: Estimated Cumulative Active Serum Concentration -->
   <div class="card" style="padding-bottom: 14px;">
-    <div class="graph-header">
-      <div>
-        <div class="card-label" style="margin: 0;">Active Load Serum (mg)</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">Retatrutide ~6-day Half-Life Decay</div>
-      </div>
-      <div class="time-filter">
+    <div class="serum-chart-heading">
+      <div class="card-label serum-chart-title">Active Serum Dosage (mg)</div>
+      <div class="time-filter" role="group" aria-label="Serum time range">
         <button id="serumFilter30" class="filter-btn active" onclick="syncTimeFilter(30)">1 Month</button>
         <button id="serumFilter90" class="filter-btn" onclick="syncTimeFilter(90)">3 Months</button>
         <button id="serumFilter180" class="filter-btn" onclick="syncTimeFilter(180)">6 Months</button>
       </div>
     </div>
-
     <!-- Active Click Value Banner for Serum Load -->
     <div id="serumBanner" class="graph-tooltip-banner" style="display: none;">
       <span id="serumBannerDate" class="banner-date">--</span>
       <span id="serumBannerVal" class="banner-val">--</span>
     </div>
 
-    <div id="serumChartWrapper" class="chart-container"></div>
+    <div id="serumDoseBanner" class="graph-tooltip-banner" style="display:none" aria-live="polite"><span class="banner-date">Injected Dose</span><span id="serumDoseBannerVal" class="banner-val">--</span></div>
+    <div id="serumChartWrapper" class="chart-container serum-scroll-chart" aria-label="Scrollable serum chart"></div>
+    <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 months</div>
 
     <div class="info-note">
-      💡 <strong>Pharmacokinetics note:</strong> Active serum level is estimated in effective cumulative mg based on the ~6.0-day (144 hr) elimination half-life of Retatrutide.
+      💡 <strong>Pharmacokinetics:</strong> Active serum level is estimated in effective cumulative mg based on the ~6-day (144 hr) elimination half-life (T½) of Retatrutide.
     </div>
   </div>
 
@@ -962,7 +946,7 @@
 <button type="button" class="backup-btn" onclick="exportData()">Export data</button>
 <button type="button" class="backup-btn" onclick="document.getElementById('importFile').click()">Import data</button></div>
 <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(event)">
-<div class="backup-note">Data stays on this phone. Export a JSON backup for safekeeping. Import replaces local records after confirmation.</div></div>
+<div class="backup-note">Data stays on this phone. Export a JSON backup for safekeeping. Import replaces local records.</div></div>
   <!-- Calendar Picker Modal -->
   <div id="calendarModal" class="modal-overlay" onclick="closeCalendarOnOverlay(event)">
     <div class="calendar-card">
@@ -1016,6 +1000,7 @@
         lastTargetDose = Math.round(storedTargetDose * 10) / 10;
       }
       loadStorage();
+      setupSerumChartGestures();
       updateUI();
     }
 
@@ -1203,7 +1188,6 @@
       computeSuggestions();
       updateActiveLoadDisplay();
       updateGraphBanners(activeLinkedDateKey);
-      renderDoseChart();
       renderSerumChart();
     }
 
@@ -1362,54 +1346,52 @@
       }
     }
 
-    // Synchronize 1, 3, 6 months filter between both graphs
+    function setupSerumChartGestures() {
+      const chart = document.getElementById('serumChartWrapper');
+      let startDistance = null, gestureConsumed = false;
+      const distance = touches => Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+      chart.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) { startDistance = distance(e.touches); gestureConsumed = false; }
+      }, {passive: true});
+      chart.addEventListener('touchmove', e => {
+        if(e.touches.length !== 2 || startDistance === null) return;
+        e.preventDefault();
+        if(gestureConsumed) return;
+        const ratio = distance(e.touches) / Math.max(1,startDistance);
+        if(ratio > 1.22 || ratio < 0.82){
+          gestureConsumed = true;
+          const ranges=[30,90,180], index=ranges.indexOf(currentDaysFilter);
+          const next=ranges[Math.max(0,Math.min(2,index+(ratio<1?1:-1)))];
+          if(next !== currentDaysFilter) syncTimeFilter(next);
+        }
+      }, {passive: false});
+      const reset = e => { if(e.touches.length < 2) startDistance = null; };
+      chart.addEventListener('touchend', reset, {passive: true});
+      chart.addEventListener('touchcancel', reset, {passive: true});
+    }
     function syncTimeFilter(days) {
-      currentDaysFilter = days;
-
-      ['doseFilter', 'serumFilter'].forEach(prefix => {
-        const b30 = document.getElementById(prefix + '30');
-        const b90 = document.getElementById(prefix + '90');
-        const b180 = document.getElementById(prefix + '180');
-        if (b30) b30.className = 'filter-btn ' + (days === 30 ? 'active' : '');
-        if (b90) b90.className = 'filter-btn ' + (days === 90 ? 'active' : '');
-        if (b180) b180.className = 'filter-btn ' + (days === 180 ? 'active' : '');
+      if(![30,90,180].includes(days)) return;
+      const changed=currentDaysFilter !== days;
+      currentDaysFilter=days;
+      [30,90,180].forEach(n=>{
+        const btn=document.getElementById('serumFilter'+n);
+        btn.classList.toggle('active',n===days);
+        btn.setAttribute('aria-pressed',String(n===days));
       });
-
-      renderDoseChart();
-      renderSerumChart();
+      renderSerumChart(changed);
     }
 
-    function setDoseFilter(days) { syncTimeFilter(days); }
-    function setSerumFilter(days) { syncTimeFilter(days); }
-
     function updateGraphBanners(dateKey) {
-      if (!dateKey) {
-        document.getElementById('doseBanner').style.display = 'none';
-        document.getElementById('serumBanner').style.display = 'none';
-        return;
-      }
-
-      const parts = dateKey.split('-');
-      const dObj = new Date(parts[0], parts[1] - 1, parts[2]);
-      const dispDate = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-      // Dosage Banner
-      const doseBanner = document.getElementById('doseBanner');
-      const item = historyData[dateKey];
-      if (item && item.injected) {
-        doseBanner.style.display = 'flex';
-        document.getElementById('doseBannerDate').innerHTML = `📅 <strong>${dispDate}</strong> (Injected)`;
-        document.getElementById('doseBannerVal').innerText = `${item.dose.toFixed(1)} mg`;
-      } else {
-        doseBanner.style.display = 'none';
-      }
-
-      // Serum Banner
-      const serumBanner = document.getElementById('serumBanner');
-      const serumLoad = calculateSerumLoadOnDate(dObj);
-      serumBanner.style.display = 'flex';
-      document.getElementById('serumBannerDate').innerHTML = `📅 <strong>${dispDate}</strong> Active Load:`;
-      document.getElementById('serumBannerVal').innerText = `${serumLoad.toFixed(2)} mg`;
+      const banner=document.getElementById('serumBanner'), doseBanner=document.getElementById('serumDoseBanner');
+      if(!dateKey){ banner.style.display='none'; doseBanner.style.display='none'; return; }
+      const [y,m,d]=dateKey.split('-').map(Number), date=new Date(y,m-1,d);
+      const displayed=date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      banner.style.display='flex';
+      document.getElementById('serumBannerDate').innerHTML=`📅 <strong>${displayed}</strong> Active Load:`;
+      document.getElementById('serumBannerVal').innerText=`${calculateSerumLoadOnDate(date).toFixed(2)} mg`;
+      const injection=historyData[dateKey];
+      doseBanner.style.display=injection?.injected?'flex':'none';
+      if(injection?.injected) document.getElementById('serumDoseBannerVal').innerText=`${injection.dose.toFixed(1)} mg`;
     }
 
     // Unified circle selection handler
@@ -1420,128 +1402,11 @@
       updateUI();
     }
 
-    function renderDoseChart() {
-      const chartWrapper = document.getElementById('doseChartWrapper');
-      // Strictly show only successfully injected records
-      const allInjectedKeys = Object.keys(historyData)
-        .filter(k => historyData[k] && historyData[k].injected)
-        .sort();
-
-      if (allInjectedKeys.length === 0) {
-        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injected dosages recorded yet.</div>`;
-        return;
-      }
-
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - currentDaysFilter);
-      const cutoffKey = formatDateKey(cutoffDate);
-
-      let filteredKeys = allInjectedKeys.filter(k => k >= cutoffKey);
-
-      if (filteredKeys.length === 0) {
-        chartWrapper.innerHTML = `<div class="empty-chart-msg">No injections in past ${currentDaysFilter === 30 ? '1 Month' : currentDaysFilter === 90 ? '3 Months' : '6 Months'}.</div>`;
-        return;
-      }
-
-      const paddingLeft = 45;
-      const paddingRight = 15;
-      const paddingTop = 15;
-      const paddingBottom = 28;
-
-      const width = chartWrapper.clientWidth || 380;
-      const height = 200;
-
-      const chartW = width - paddingLeft - paddingRight;
-      const chartH = height - paddingTop - paddingBottom;
-
-      const minDose = 0.5;
-      const maxDose = Math.max(3.0, ...filteredKeys.map(k => historyData[k].dose));
-
-      function getX(index, total) {
-        if (total === 1) return paddingLeft + chartW / 2;
-        return paddingLeft + (index / (total - 1)) * chartW;
-      }
-
-      function getY(dose) {
-        const clamped = Math.min(maxDose, Math.max(minDose, dose));
-        const ratio = (clamped - minDose) / (maxDose - minDose);
-        return paddingTop + chartH - (ratio * chartH);
-      }
-
-      let points = [];
-      let pathD = '';
-
-      filteredKeys.forEach((key, idx) => {
-        const item = historyData[key];
-        const x = getX(idx, filteredKeys.length);
-        const y = getY(item.dose);
-        points.push({ x, y, key, item });
-
-        if (idx === 0) pathD += `M ${x} ${y}`;
-        else pathD += ` L ${x} ${y}`;
-      });
-
-      const firstX = points[0].x;
-      const lastX = points[points.length - 1].x;
-      const zeroY = paddingTop + chartH;
-      const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
-
-      const activePointColor = '#00f5d4';
-      const activeLineColor = '#3a86ff';
-
-      const step = (maxDose - minDose) / 3;
-      const ticks = [minDose, minDose + step, minDose + (2 * step), maxDose];
-
-      let svgHtml = `
-        <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
-          <defs>
-            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="${activeLineColor}" stop-opacity="0.45"/>
-              <stop offset="100%" stop-color="${activeLineColor}" stop-opacity="0.0"/>
-            </linearGradient>
-          </defs>
-      `;
-
-      ticks.forEach(val => {
-        const y = getY(val);
-        svgHtml += `
-          <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${val.toFixed(1)} mg</text>
-        `;
-      });
-
-      svgHtml += `
-          <path d="${areaD}" class="chart-area" />
-          <path d="${pathD}" class="chart-line" />
-      `;
-
-      const stepLabel = Math.max(1, Math.floor(points.length / 6));
-      points.forEach((p, idx) => {
-        const [y, m, d] = p.key.split('-');
-        const shortDate = `${parseInt(m)}/${parseInt(d)}`;
-        const isSelected = (activeLinkedDateKey === p.key);
-        const showLabel = points.length <= 8 || idx === 0 || idx === points.length - 1 || idx % stepLabel === 0 || isSelected;
-
-        if (showLabel) {
-          svgHtml += `<text x="${p.x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label ${isSelected ? 'highlighted-date' : ''}">${shortDate}</text>`;
-        }
-
-        let pointClasses = 'chart-point';
-        if (isSelected) pointClasses += ' selected-node';
-
-        svgHtml += `
-          <circle cx="${p.x}" cy="${p.y}" fill="${activePointColor}" class="${pointClasses}" onclick="handlePointSelected('${p.key}')">
-            <title>${p.key}: ${p.item.dose.toFixed(1)} mg</title>
-          </circle>
-        `;
-      });
-
-      svgHtml += `</svg>`;
-      chartWrapper.innerHTML = svgHtml;
-    }
-
-    function renderSerumChart() {
+    function renderSerumChart(resetScroll = false) {
       const chartWrapper = document.getElementById('serumChartWrapper');
+      const priorScroll = chartWrapper.scrollLeft;
+      const priorMax = Math.max(0, chartWrapper.scrollWidth - chartWrapper.clientWidth);
+      const wasAtEnd = priorMax === 0 || priorMax-priorScroll < 32;
       const allKeys = Object.keys(historyData).sort();
       const injectedKeys = allKeys.filter(k => historyData[k] && historyData[k].injected);
 
@@ -1572,7 +1437,8 @@
       const paddingTop = 15;
       const paddingBottom = 28;
 
-      const width = chartWrapper.clientWidth || 380;
+      const viewportWidth = chartWrapper.clientWidth || 380;
+      const width = Math.max(viewportWidth, totalDays * 16 + paddingLeft + paddingRight);
       const height = 200;
 
       const chartW = width - paddingLeft - paddingRight;
@@ -1604,13 +1470,13 @@
       const zeroY = paddingTop + chartH;
       const areaD = `${pathD} L ${lastX} ${zeroY} L ${firstX} ${zeroY} Z`;
 
-      const strokeColor = true ? '#3a86ff' : '#8338ec';
-      const pointColor = true ? '#00f5d4' : '#ffbe0b';
+      const strokeColor = '#3a86ff';
+      const pointColor = '#00f5d4';
 
       const serumScaleSteps = [0, maxSerumAxis * 0.33, maxSerumAxis * 0.66, maxSerumAxis];
 
       let svgHtml = `
-        <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
+        <svg class="chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="width:${width}px;min-width:${width}px;max-width:none">
           <defs>
             <linearGradient id="serumGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.4"/>
@@ -1632,7 +1498,7 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      const stepLabel = Math.max(1, Math.floor(dailyPoints.length / 6));
+      const stepLabel = 7;
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
@@ -1663,6 +1529,8 @@
 
       svgHtml += `</svg>`;
       chartWrapper.innerHTML = svgHtml;
+      const maxScroll=Math.max(0, chartWrapper.scrollWidth-chartWrapper.clientWidth);
+      chartWrapper.scrollLeft = resetScroll || wasAtEnd ? maxScroll : Math.min(priorScroll,maxScroll);
     }
 
     window.onload = init;
