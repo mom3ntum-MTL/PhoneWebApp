@@ -1512,9 +1512,10 @@
         });
       }
 
-      // Match the fixed 16px Y-axis strips at both edges.
-      const paddingLeft = 16;
-      const paddingRight = 16;
+      // Keep first/last injection dots clear of the fixed Y-axis lines.
+      // Selected points can reach a 9px radius, so leave 12px extra beyond the 16px axis strips.
+      const paddingLeft = 28;
+      const paddingRight = 28;
       const paddingTop = 15;
       const paddingBottom = 28;
 
