@@ -816,10 +816,11 @@
 .target-ranges-box{margin-top:16px}
     .serum-chart-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
     .serum-chart-title{font-size:.9rem;letter-spacing:.8px;margin:0}
-    .serum-chart-heading .time-filter{align-self:flex-start;flex-wrap:wrap}
+    .serum-chart-heading .time-filter{align-self:stretch;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:3px}
+    .serum-chart-heading .time-filter .filter-btn{width:100%;min-width:0;padding:8px 3px;white-space:nowrap;font-size:.72rem}
     .serum-scroll-chart{overflow-x:auto;overflow-y:hidden;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto;scrollbar-width:thin;scroll-behavior:auto}
     .serum-scroll-chart svg.chart-svg{display:block;height:200px;touch-action:pan-x pan-y}
-    .serum-chart-hint{margin-top:8px;font-size:.7rem;text-align:center;color:var(--text-secondary)}
+    .serum-chart-hint{margin-top:16px;font-size:.7rem;text-align:center;color:var(--text-secondary)}
 
     .serum-detail-layout{display:flex;align-items:stretch;gap:8px;margin-bottom:8px}
     .serum-detail-date{flex:0 0 104px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--theme-primary);border-radius:12px;background:var(--bg-input);padding:7px 4px;text-align:center}
@@ -828,10 +829,10 @@
     .serum-detail-values{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
     .serum-detail-values .graph-tooltip-banner{margin:0;padding:7px 9px;gap:6px}
     .serum-chart-frame{position:relative}
-    .serum-axis{position:absolute;top:10px;bottom:0;width:35px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
+    .serum-axis{position:absolute;top:10px;bottom:0;width:22px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
     .serum-axis-left{left:0;border-right:1px solid var(--border-color)}
     .serum-axis-right{right:0;border-left:1px solid var(--border-color)}
-    .serum-axis-tick{position:absolute;transform:translateY(-50%);width:100%;font-size:10px;font-weight:700;color:var(--text-secondary);text-align:center}
+    .serum-axis-tick{position:absolute;transform:translateY(-50%);width:100%;font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center}
     .serum-axis-unit{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:var(--text-primary)}
   </style>
 </head>
@@ -1500,8 +1501,9 @@
         });
       }
 
-      const paddingLeft = 44;
-      const paddingRight = 44;
+      // Narrow fixed Y axes, plus a little right-hand room for today's X label.
+      const paddingLeft = 25;
+      const paddingRight = 78;
       const paddingTop = 15;
       const paddingBottom = 28;
 
@@ -1509,7 +1511,8 @@
       // Different time ranges also have different visible day density.
       // Preserve horizontal panning in every mode while making 1/3/6 months visually distinct.
       const spanFactor = totalDays === 30 ? 1.35 : totalDays === 90 ? 1.85 : totalDays === 180 ? 2.35 : 3.1;
-      const width = Math.ceil(viewportWidth * spanFactor);
+      // A minimum of 5 px/day ensures every 1st and 15th fits, even in 12-month mode.
+      const width = Math.ceil(Math.max(viewportWidth * spanFactor, totalDays * 5 + paddingLeft + paddingRight));
       const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1);
       const maxSerumAxis = Math.max(1, Math.ceil(maxSerumCalculated * 1.12));
       const height = Math.max(200, maxSerumAxis * 18 + paddingTop + paddingBottom);
@@ -1574,11 +1577,17 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      // Only label the 1st and 15th, plus today at the far-right edge.
-      // Reserve today's label first and omit any nearby labels that would overlap.
-      const labels = [];
-      const minLabelGap = 55;
-      const todayX = getX(dailyPoints.length - 1, dailyPoints.length);
+      // Show every 1st and 15th (day/month) on all ranges, plus today's date.
+      // The canvas is wide enough for these labels at every scale.
+      dailyPoints.forEach((p, idx) => {
+        if (p.date.getDate() !== 1 && p.date.getDate() !== 15) return;
+        const x = getX(idx, dailyPoints.length);
+        const dayMonth = `${p.date.getDate()}/${p.date.getMonth() + 1}`;
+        svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${dayMonth}</text>`;
+      });
+      // Today's date remains at the far right of the timeline.
+      svgHtml += `<text x="${width - 28}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${today.getDate()}/${today.getMonth() + 1}</text>`;
+
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         if (idx !== dailyPoints.length - 1 && p.date.getDate() !== 1 && p.date.getDate() !== 15) return;
