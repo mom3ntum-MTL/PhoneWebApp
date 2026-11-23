@@ -1513,9 +1513,9 @@
       }
 
       // Keep first/last injection dots clear of the fixed Y-axis lines.
-      // Selected points can reach a 9px radius, so leave 12px extra beyond the 16px axis strips.
-      const paddingLeft = 28;
-      const paddingRight = 28;
+      // Selected points can reach a 9px radius; leave 8px extra beyond the 16px axis strips.
+      const paddingLeft = 24;
+      const paddingRight = 24;
       const paddingTop = 15;
       const paddingBottom = 28;
 
@@ -1603,8 +1603,8 @@
         }
         if (idx === dailyPoints.length - 1) return;
         if (currentDaysFilter === 30) {
-          // Weekly labels in the 1-month view, with a full month/day label.
-          if ((dailyPoints.length - 1 - idx) % 7 !== 0 && day !== 1) return;
+          // In the 1-month view, label only the 1st, 10th, and 20th.
+          if (day !== 1 && day !== 10 && day !== 20) return;
         } else if (currentDaysFilter === 90) {
           if (day !== 1 && day !== 15) return;
         } else {
@@ -1614,17 +1614,18 @@
         labelCandidates.push({ x, label: formatAxisDate(p.date, shortDay) });
       });
       // Keep labels legible without letting them run into the current-date label.
+      const showTodayLabel = currentDaysFilter !== 30 || [1, 10, 20].includes(today.getDate());
       const todayLabel = formatAxisDate(today);
       const todayX = lastX - 2;
-      const minGap = currentDaysFilter === 30 ? 48 : currentDaysFilter === 90 ? 34 : 42;
+      const minGap = currentDaysFilter === 30 ? 36 : currentDaysFilter === 90 ? 34 : 42;
       let lastLabelX = -Infinity;
       labelCandidates.forEach(({x,label}) => {
         const requiredGap = label.includes('20') && label.startsWith('Jan 1 ') ? 78 : minGap;
-        if (x - lastLabelX < requiredGap || todayX - x < 60) return;
+        if (x - lastLabelX < requiredGap || (showTodayLabel && todayX - x < 60)) return;
         svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${label}</text>`;
         lastLabelX = x;
       });
-      svgHtml += `<text x="${todayX}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${todayLabel}</text>`;
+      if (showTodayLabel) svgHtml += `<text x="${todayX}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${todayLabel}</text>`;
 
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
