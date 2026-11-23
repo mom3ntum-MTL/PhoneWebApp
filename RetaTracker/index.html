@@ -1498,8 +1498,8 @@
         });
       }
 
-      const paddingLeft = 45;
-      const paddingRight = 15;
+      const paddingLeft = 44;
+      const paddingRight = 44;
       const paddingTop = 15;
       const paddingBottom = 28;
 
@@ -1508,13 +1508,15 @@
       // Preserve horizontal panning in every mode while making 1/3/6 months visually distinct.
       const spanFactor = totalDays === 30 ? 1.35 : totalDays === 90 ? 1.85 : totalDays === 180 ? 2.35 : 3.1;
       const width = Math.ceil(viewportWidth * spanFactor);
-      const height = 200;
+      const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1);
+      const maxSerumAxis = Math.max(1, Math.ceil(maxSerumCalculated * 1.12));
+      const height = Math.max(200, maxSerumAxis * 18 + paddingTop + paddingBottom);
+      chartWrapper.style.height = `${height + 5}px`;
+      document.querySelectorAll('.serum-axis').forEach(axis => axis.style.height = `${height + 5}px`);
 
       const chartW = width - paddingLeft - paddingRight;
       const chartH = height - paddingTop - paddingBottom;
 
-      const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1.5);
-      const maxSerumAxis = Math.ceil(maxSerumCalculated * 1.2 * 10) / 10;
 
       function getX(idx, total) {
         if (total === 1) return paddingLeft + chartW / 2;
@@ -1542,7 +1544,7 @@
       const strokeColor = '#3a86ff';
       const pointColor = '#00f5d4';
 
-      const serumScaleSteps = [0, maxSerumAxis * 0.33, maxSerumAxis * 0.66, maxSerumAxis];
+      const serumScaleSteps = Array.from({length: maxSerumAxis}, (_, i) => i + 1);
 
       let svgHtml = `
         <svg class="chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="width:${width}px;min-width:${width}px;max-width:none">
@@ -1556,30 +1558,43 @@
 
       serumScaleSteps.forEach(val => {
         const y = getY(val);
-        svgHtml += `
-          <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />
-          <text x="${paddingLeft - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${val.toFixed(1)} mg</text>
-        `;
+        svgHtml += `<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />`;
       });
+      // Y-axis labels live outside the scrollable SVG, so both edges remain visible.
+      const axisMarkup = serumScaleSteps.map(val =>
+        `<span class="serum-axis-tick" style="top:${getY(val)}px">${val}</span>`
+      ).join('') + '<strong class="serum-axis-unit">mg</strong>';
+      document.getElementById('serumAxisLeft').innerHTML = axisMarkup;
+      document.getElementById('serumAxisRight').innerHTML = axisMarkup;
 
       svgHtml += `
           <path d="${areaD}" fill="url(#serumGradient)" />
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      const stepLabel = totalDays === 30 ? 5 : totalDays === 90 ? 10 : totalDays === 180 ? 20 : 40;
+      // Only label the 1st and 15th, plus today at the far-right edge.
+      // Reserve today's label first and omit any nearby labels that would overlap.
+      const labels = [];
+      const minLabelGap = 55;
+      const todayX = getX(dailyPoints.length - 1, dailyPoints.length);
+      dailyPoints.forEach((p, idx) => {
+        const x = getX(idx, dailyPoints.length);
+        if (idx !== dailyPoints.length - 1 && p.date.getDate() !== 1 && p.date.getDate() !== 15) return;
+        const text = `${p.date.getMonth() + 1}/${p.date.getDate()}`;
+        if (idx === dailyPoints.length - 1) return;
+        if (Math.abs(todayX - x) < minLabelGap) return;
+        if (labels.some(label => Math.abs(label.x - x) < minLabelGap)) return;
+        labels.push({x, text});
+      });
+      labels.push({x:todayX,text:`${today.getMonth() + 1}/${today.getDate()}`,isToday:true});
+      labels.forEach(label => {
+        svgHtml += `<text x="${label.isToday ? width - 5 : label.x}" y="${height - 6}" text-anchor="${label.isToday ? 'end' : 'middle'}" class="chart-axis-label">${label.text}</text>`;
+      });
+
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
         const y = getY(p.serum);
         const isSelected = (activeLinkedDateKey === p.key);
-
-        const showLabel = dailyPoints.length <= 8 || idx === 0 || idx === dailyPoints.length - 1 || idx % stepLabel === 0 || isSelected;
-
-        if (showLabel) {
-          const m = p.date.getMonth() + 1;
-          const d = p.date.getDate();
-          svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label ${isSelected ? 'highlighted-date' : ''}">${m}/${d}</text>`;
-        }
 
         const isInj = historyData[p.key]?.injected;
         const isLatest = idx === dailyPoints.length - 1;
@@ -1598,6 +1613,8 @@
 
       svgHtml += `</svg>`;
       chartWrapper.innerHTML = svgHtml;
+      const svg = chartWrapper.querySelector('svg.chart-svg');
+      if (svg) svg.style.height = height + 'px';
       const maxScroll=Math.max(0, chartWrapper.scrollWidth-chartWrapper.clientWidth);
       chartWrapper.scrollLeft = resetScroll || wasAtEnd ? maxScroll : Math.min(priorScroll,maxScroll);
     }
