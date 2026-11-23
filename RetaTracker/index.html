@@ -823,17 +823,17 @@
     .serum-chart-hint{margin-top:16px;font-size:.7rem;text-align:center;color:var(--text-secondary)}
 
     .serum-detail-layout{display:flex;align-items:stretch;gap:8px;margin-bottom:8px}
-    .serum-detail-date{flex:0 0 104px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--theme-primary);border-radius:12px;background:var(--bg-input);padding:7px 4px;text-align:center}
-    .serum-detail-date-main{display:flex;gap:4px;align-items:center;font-size:.78rem;font-weight:800;white-space:nowrap}
+    .serum-detail-date{flex:0 0 84px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;border-radius:10px;background:var(--bg-input);padding:6px 3px;text-align:center}
+    .serum-detail-date-main{display:flex;gap:3px;align-items:center;font-size:.73rem;font-weight:800;white-space:nowrap}
     .serum-detail-year{font-size:.77rem;font-weight:700;color:var(--text-secondary);margin-top:3px}
     .serum-detail-values{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
     .serum-detail-values .graph-tooltip-banner{margin:0;padding:7px 9px;gap:6px}
     .serum-chart-frame{position:relative}
-    .serum-axis{position:absolute;top:10px;bottom:0;width:22px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
+    .serum-axis{position:absolute;top:10px;bottom:0;width:10px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
     .serum-axis-left{left:0;border-right:1px solid var(--border-color)}
     .serum-axis-right{right:0;border-left:1px solid var(--border-color)}
-    .serum-axis-tick{position:absolute;transform:translateY(-50%);width:100%;font-size:9px;font-weight:700;color:var(--text-secondary);text-align:center}
-    .serum-axis-unit{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:var(--text-primary)}
+    .serum-axis-tick{position:absolute;transform:translateY(-50%);width:100%;font-size:8px;font-weight:700;color:var(--text-secondary);text-align:center}
+    .serum-axis-unit{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:9px;font-weight:900;color:var(--text-primary)}
   </style>
 </head>
 <body>
@@ -1502,8 +1502,8 @@
       }
 
       // Narrow fixed Y axes, plus a little right-hand room for today's X label.
-      const paddingLeft = 25;
-      const paddingRight = 78;
+      const paddingLeft = 14;
+      const paddingRight = 14;
       const paddingTop = 15;
       const paddingBottom = 28;
 
@@ -1580,13 +1580,15 @@
       // Show every 1st and 15th (day/month) on all ranges, plus today's date.
       // The canvas is wide enough for these labels at every scale.
       dailyPoints.forEach((p, idx) => {
-        if (p.date.getDate() !== 1 && p.date.getDate() !== 15) return;
+        if (idx === dailyPoints.length - 1 || (p.date.getDate() !== 1 && p.date.getDate() !== 15)) return;
+        if (dailyPoints.length - 1 - idx < 9) return; // Leave room for today's label.
         const x = getX(idx, dailyPoints.length);
         const dayMonth = `${p.date.getDate()}/${p.date.getMonth() + 1}`;
         svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${dayMonth}</text>`;
       });
-      // Today's date remains at the far right of the timeline.
-      svgHtml += `<text x="${width - 28}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${today.getDate()}/${today.getMonth() + 1}</text>`;
+      // Today's label must be anchored to the final data point, not the SVG edge.
+      // Make the label readable and avoid duplicating it when today is the 1st or 15th.
+      svgHtml += `<text x="${lastX - 2}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${today.getDate()}/${today.getMonth() + 1}</text>`;
 
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
