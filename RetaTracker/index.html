@@ -958,7 +958,7 @@
         <div class="serum-detail-year" id="serumDetailYear">----</div>
       </div>
       <div class="serum-detail-values" id="serumDetailValues">
-    <div id="serumBanner" class="graph-tooltip-banner" style="display: none;">
+        <div id="serumBanner" class="graph-tooltip-banner" style="display: none;">
       <span class="banner-date">Active Load:</span>
       <span id="serumBannerVal" class="banner-val">--</span>
     </div>
@@ -1431,8 +1431,8 @@
     function updateSerumRangeButtons() {
       [30,90,180,365].forEach(n=>{
         const btn=document.getElementById('serumFilter'+n);
-        btn.classList.toggle('active',n===days);
-        btn.setAttribute('aria-pressed',String(n===days));
+        btn.classList.toggle('active',n===currentDaysFilter);
+        btn.setAttribute('aria-pressed',String(n===currentDaysFilter));
       });
     }
     function syncTimeFilter(days) {
@@ -1478,6 +1478,8 @@
 
       if (injectedKeys.length === 0) {
         chartWrapper.innerHTML = `<div class="empty-chart-msg">Log an injection to view active serum decay curve.</div>`;
+        document.getElementById('serumAxisLeft').innerHTML = '';
+        document.getElementById('serumAxisRight').innerHTML = '';
         return;
       }
 
@@ -1588,7 +1590,7 @@
       });
       labels.push({x:todayX,text:`${today.getMonth() + 1}/${today.getDate()}`,isToday:true});
       labels.forEach(label => {
-        svgHtml += `<text x="${label.isToday ? width - 5 : label.x}" y="${height - 6}" text-anchor="${label.isToday ? 'end' : 'middle'}" class="chart-axis-label">${label.text}</text>`;
+        svgHtml += `<text x="${label.isToday ? width - paddingRight - 5 : label.x}" y="${height - 6}" text-anchor="${label.isToday ? 'end' : 'middle'}" class="chart-axis-label">${label.text}</text>`;
       });
 
       dailyPoints.forEach((p, idx) => {
