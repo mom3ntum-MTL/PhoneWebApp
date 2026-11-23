@@ -828,8 +828,8 @@
     .serum-detail-year{font-size:.77rem;font-weight:700;color:var(--text-secondary);margin-top:3px}
     .serum-detail-values{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
     .serum-detail-values .graph-tooltip-banner{margin:0;padding:7px 9px;gap:6px}
-    .serum-chart-frame{position:relative}
-    .serum-axis{position:absolute;top:10px;bottom:0;width:10px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
+    .serum-chart-frame{position:relative;margin-left:-16px;margin-right:-16px}
+    .serum-axis{position:absolute;top:10px;bottom:0;width:16px;z-index:2;pointer-events:none;background:var(--bg-card);font-variant-numeric:tabular-nums}
     .serum-axis-left{left:0;border-right:1px solid var(--border-color)}
     .serum-axis-right{right:0;border-left:1px solid var(--border-color)}
     .serum-axis-tick{position:absolute;transform:translateY(-50%);width:100%;font-size:8px;font-weight:700;color:var(--text-secondary);text-align:center}
@@ -974,7 +974,7 @@
     <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 / 12 months</div>
 
     <div class="info-note">
-      💡 <strong>Pharmacokinetics:</strong> Active serum level is estimated in effective cumulative mg based on the <strong>~6-day (144 hr)</strong> elimination half-life (T½) of Retatrutide. Peak Plasma Concentration 24-48h after SubQ injections.
+      💡 <strong>Pharmacokinetics:</strong> Active serum level is estimated in effective cumulative mg based on the <strong>~6-day (144 hr)</strong> elimination half-life (T½) of Retatrutide. Plasma concentration peak at <strong>24-48h</strong> after subQ injections.
     </div>
   </div>
 
@@ -1484,8 +1484,13 @@
         return;
       }
 
-      const totalDays = currentDaysFilter;
+      // Each selected view represents an exact number of weeks (inclusive of today):
+      // 1 month = 4 weeks, 3 months = 13 weeks, 6 months = 26 weeks,
+      // 12 months = 52 weeks. Earlier history remains swipe-accessible.
+      const visibleDays = {30: 28, 90: 91, 180: 182, 365: 364}[currentDaysFilter];
+      const totalDays = visibleDays * 2;
       const today = new Date();
+      today.setHours(12, 0, 0, 0);
       const dailyPoints = [];
 
       for (let i = totalDays - 1; i >= 0; i--) {
@@ -1501,25 +1506,24 @@
         });
       }
 
-      // Narrow fixed Y axes, plus a little right-hand room for today's X label.
-      const paddingLeft = 14;
-      const paddingRight = 14;
+      // Match the fixed 16px Y-axis strips at both edges.
+      const paddingLeft = 16;
+      const paddingRight = 16;
       const paddingTop = 15;
       const paddingBottom = 28;
 
       const viewportWidth = chartWrapper.clientWidth || 380;
-      // Different time ranges also have different visible day density.
-      // Preserve horizontal panning in every mode while making 1/3/6 months visually distinct.
-      const spanFactor = totalDays === 30 ? 1.35 : totalDays === 90 ? 1.85 : totalDays === 180 ? 2.35 : 3.1;
-      // A minimum of 5 px/day ensures every 1st and 15th fits, even in 12-month mode.
-      const width = Math.ceil(Math.max(viewportWidth * spanFactor, totalDays * 5 + paddingLeft + paddingRight));
+      // Precisely one chosen range fills the visible width at the right edge.
+      // The extra full range is accessible by swiping horizontally.
+      const pixelsPerDay = Math.max(0.2, (viewportWidth - paddingLeft - paddingRight) / (visibleDays - 1));
+      const width = Math.ceil((totalDays - 1) * pixelsPerDay + paddingLeft + paddingRight);
       const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1);
       const maxSerumAxis = Math.max(1, Math.ceil(maxSerumCalculated * 1.12));
       const height = Math.max(200, maxSerumAxis * 18 + paddingTop + paddingBottom);
       chartWrapper.style.height = `${height + 5}px`;
       document.querySelectorAll('.serum-axis').forEach(axis => axis.style.height = `${height + 5}px`);
 
-      const chartW = width - paddingLeft - paddingRight;
+      const chartW = (totalDays - 1) * pixelsPerDay;
       const chartH = height - paddingTop - paddingBottom;
 
 
@@ -1577,11 +1581,12 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      // Show every 1st and 15th (day/month) on all ranges, plus today's date.
-      // The canvas is wide enough for these labels at every scale.
+      // Label the 1st and 15th in day/month order.
+      // Ticks remain at exact dates as the window spans 4, 13, 26 or 52 weeks.
       dailyPoints.forEach((p, idx) => {
         if (idx === dailyPoints.length - 1 || (p.date.getDate() !== 1 && p.date.getDate() !== 15)) return;
-        if (dailyPoints.length - 1 - idx < 9) return; // Leave room for today's label.
+        // Protect the current-date label from nearby dates based on actual pixel spacing.
+        if ((dailyPoints.length - 1 - idx) * pixelsPerDay < 46) return;
         const x = getX(idx, dailyPoints.length);
         const dayMonth = `${p.date.getDate()}/${p.date.getMonth() + 1}`;
         svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${dayMonth}</text>`;
