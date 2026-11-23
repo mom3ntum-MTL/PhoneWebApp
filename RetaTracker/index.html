@@ -433,6 +433,7 @@
       display: block;
     }
 
+    .chart-month-line { stroke: rgba(91, 110, 137, .27); stroke-width: 1; stroke-dasharray: 2 5; }
     .chart-grid-line {
       stroke: rgba(0, 0, 0, 0.06);
       stroke-dasharray: 4;
@@ -816,7 +817,7 @@
 .target-ranges-box{margin-top:16px}
     .serum-chart-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
     .serum-chart-title{font-size:.9rem;letter-spacing:.8px;margin:0}
-    .serum-chart-heading .time-filter{align-self:stretch;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:3px}
+    .serum-chart-heading .time-filter{align-self:stretch;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:3px}
     .serum-chart-heading .time-filter .filter-btn{width:100%;min-width:0;padding:8px 3px;white-space:nowrap;font-size:.72rem}
     .serum-scroll-chart{overflow-x:auto;overflow-y:hidden;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto;scrollbar-width:thin;scroll-behavior:auto}
     .serum-scroll-chart svg.chart-svg{display:block;height:200px;touch-action:pan-x pan-y}
@@ -949,7 +950,6 @@
         <button id="serumFilter30" class="filter-btn active" onclick="syncTimeFilter(30)">1 Month</button>
         <button id="serumFilter90" class="filter-btn" onclick="syncTimeFilter(90)">3 Months</button>
         <button id="serumFilter180" class="filter-btn" onclick="syncTimeFilter(180)">6 Months</button>
-        <button id="serumFilter365" class="filter-btn" onclick="syncTimeFilter(365)">12 Months</button>
       </div>
     </div>
     <!-- Active Click Value Banner for Serum Load -->
@@ -971,7 +971,7 @@
       <div id="serumAxisLeft" class="serum-axis serum-axis-left" aria-hidden="true"></div>
       <div id="serumAxisRight" class="serum-axis serum-axis-right" aria-hidden="true"></div>
     </div>
-    <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 / 12 months</div>
+    <div class="serum-chart-hint">Swipe to explore dates · Pinch to switch 1 / 3 / 6 months</div>
 
     <div class="info-note">
       💡 <strong>Pharmacokinetics:</strong> Active serum level is estimated in effective cumulative mg based on the <strong>~6-day (144 hr)</strong> elimination half-life (T½) of Retatrutide. Plasma concentration peak at <strong>24-48h</strong> after subQ injections.
@@ -1037,7 +1037,8 @@
         lastTargetDose = Math.round(storedTargetDose * 10) / 10;
       }
       const savedRange = Number(localStorage.getItem(CHART_RANGE_KEY));
-      if ([30,90,180,365].includes(savedRange)) currentDaysFilter = savedRange;
+      if ([30,90,180].includes(savedRange)) currentDaysFilter = savedRange;
+      else if (savedRange === 365) currentDaysFilter = 180;
       loadStorage();
       setupSerumChartGestures();
       updateUI();
@@ -1412,7 +1413,7 @@
         const ratio = distance(event.touches) / Math.max(1, startDistance);
         if (ratio > 1.18 || ratio < 0.85) {
           gestureConsumed = true;
-          const ranges = [30, 90, 180, 365];
+          const ranges = [30, 90, 180];
           const index = ranges.indexOf(currentDaysFilter);
           // Spread -> zoom in (fewer days); pinch together -> zoom out.
           const next = ranges[Math.max(0, Math.min(ranges.length - 1, index + (ratio < 1 ? 1 : -1)))];
@@ -1430,14 +1431,14 @@
       chart.addEventListener('touchcancel', reset, {passive: true});
     }
     function updateSerumRangeButtons() {
-      [30,90,180,365].forEach(n=>{
+      [30,90,180].forEach(n=>{
         const btn=document.getElementById('serumFilter'+n);
         btn.classList.toggle('active',n===currentDaysFilter);
         btn.setAttribute('aria-pressed',String(n===currentDaysFilter));
       });
     }
     function syncTimeFilter(days) {
-      if(![30,90,180,365].includes(days)) return;
+      if(![30,90,180].includes(days)) return;
       const changed=currentDaysFilter !== days;
       currentDaysFilter=days;
       localStorage.setItem(CHART_RANGE_KEY, String(days));
@@ -1484,13 +1485,18 @@
         return;
       }
 
-      // Each selected view represents an exact number of weeks (inclusive of today):
-      // 1 month = 4 weeks, 3 months = 13 weeks, 6 months = 26 weeks,
-      // 12 months = 52 weeks. Earlier history remains swipe-accessible.
-      const visibleDays = {30: 28, 90: 91, 180: 182, 365: 364}[currentDaysFilter];
-      const totalDays = visibleDays * 2;
+      // Keep each visible window at 4 / 13 / 26 weeks ending today.
+      // Extend the scrollable timeline all the way to the earliest recorded injection.
+      const visibleDays = {30: 28, 90: 91, 180: 182}[currentDaysFilter];
       const today = new Date();
       today.setHours(12, 0, 0, 0);
+      const earliestParts = injectedKeys[0].split('-').map(Number);
+      const earliestDate = new Date(earliestParts[0], earliestParts[1] - 1, earliestParts[2], 12);
+      // UTC calendar days avoid daylight-saving transitions changing the day count.
+      const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      const firstUtc = Date.UTC(earliestDate.getFullYear(), earliestDate.getMonth(), earliestDate.getDate());
+      const historyDays = Math.max(1, Math.round((todayUtc - firstUtc) / 86400000) + 1);
+      const totalDays = Math.max(visibleDays, historyDays);
       const dailyPoints = [];
 
       for (let i = totalDays - 1; i >= 0; i--) {
@@ -1513,8 +1519,8 @@
       const paddingBottom = 28;
 
       const viewportWidth = chartWrapper.clientWidth || 380;
-      // Precisely one chosen range fills the visible width at the right edge.
-      // The extra full range is accessible by swiping horizontally.
+      // One selected range fills the viewport at the right edge; earlier injections
+      // remain accessible at the same day scale by scrolling to the left.
       const pixelsPerDay = Math.max(0.2, (viewportWidth - paddingLeft - paddingRight) / (visibleDays - 1));
       const width = Math.ceil((totalDays - 1) * pixelsPerDay + paddingLeft + paddingRight);
       const maxSerumCalculated = Math.max(...dailyPoints.map(p => p.serum), 1);
@@ -1581,19 +1587,43 @@
           <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
       `;
 
-      // Label the 1st and 15th in day/month order.
-      // Ticks remain at exact dates as the window spans 4, 13, 26 or 52 weeks.
+      // Monthly vertical guides are fixed to each 1st, in all three modes.
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const labelCandidates = [];
+      const formatAxisDate = (date, shortDay = false) => {
+        if (date.getMonth() === 0 && date.getDate() === 1) return `Jan 1 ${date.getFullYear()}`;
+        return shortDay ? String(date.getDate()) : `${monthNames[date.getMonth()]} ${date.getDate()}`;
+      };
       dailyPoints.forEach((p, idx) => {
-        if (idx === dailyPoints.length - 1 || (p.date.getDate() !== 1 && p.date.getDate() !== 15)) return;
-        // Protect the current-date label from nearby dates based on actual pixel spacing.
-        if ((dailyPoints.length - 1 - idx) * pixelsPerDay < 46) return;
+        const day = p.date.getDate();
         const x = getX(idx, dailyPoints.length);
-        const dayMonth = `${p.date.getDate()}/${p.date.getMonth() + 1}`;
-        svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${dayMonth}</text>`;
+        if (day === 1) {
+          svgHtml += `<line x1="${x}" y1="${paddingTop}" x2="${x}" y2="${zeroY}" class="chart-month-line" />`;
+        }
+        if (idx === dailyPoints.length - 1) return;
+        if (currentDaysFilter === 30) {
+          // Weekly labels in the 1-month view, with a full month/day label.
+          if ((dailyPoints.length - 1 - idx) % 7 !== 0 && day !== 1) return;
+        } else if (currentDaysFilter === 90) {
+          if (day !== 1 && day !== 15) return;
+        } else {
+          if (day !== 1) return;
+        }
+        const shortDay = currentDaysFilter === 90 && day === 15;
+        labelCandidates.push({ x, label: formatAxisDate(p.date, shortDay) });
       });
-      // Today's label must be anchored to the final data point, not the SVG edge.
-      // Make the label readable and avoid duplicating it when today is the 1st or 15th.
-      svgHtml += `<text x="${lastX - 2}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${today.getDate()}/${today.getMonth() + 1}</text>`;
+      // Keep labels legible without letting them run into the current-date label.
+      const todayLabel = formatAxisDate(today);
+      const todayX = lastX - 2;
+      const minGap = currentDaysFilter === 30 ? 48 : currentDaysFilter === 90 ? 34 : 42;
+      let lastLabelX = -Infinity;
+      labelCandidates.forEach(({x,label}) => {
+        const requiredGap = label.includes('20') && label.startsWith('Jan 1 ') ? 78 : minGap;
+        if (x - lastLabelX < requiredGap || todayX - x < 60) return;
+        svgHtml += `<text x="${x}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${label}</text>`;
+        lastLabelX = x;
+      });
+      svgHtml += `<text x="${todayX}" y="${height - 6}" text-anchor="end" class="chart-axis-label highlighted-date">${todayLabel}</text>`;
 
       dailyPoints.forEach((p, idx) => {
         const x = getX(idx, dailyPoints.length);
